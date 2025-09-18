@@ -240,16 +240,37 @@
                                 <input type="text" class="form-control" name="verificationName" required>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Documentation Files</label>
-                                <input type="file" class="form-control" name="documentationFiles" multiple accept=".md,.txt,.pdf">
+                                <label class="form-label">Documentation Files (one per line)</label>
+                                <textarea class="form-control" name="documentationFiles" rows="3" placeholder="/absolute/path/to/doc1.md&#10;/absolute/path/to/doc2.md"></textarea>
+                                <small class="form-text text-muted">Enter absolute file paths, one per line. Use the file picker below to select files - it will add the filenames to the list, then you can edit them to include the full paths.</small>
+                                <div class="d-flex gap-2 mt-2">
+                                    <input type="file" class="form-control" name="documentationFilesPicker" multiple accept=".md,.txt,.pdf" onchange="updateFilePaths(this, 'documentationFiles')">
+                                    <button type="button" class="btn btn-outline-info btn-sm" onclick="showPathHelp()" title="How to get file paths">
+                                        <i class="fas fa-question-circle"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Frontend Code Files</label>
-                                <input type="file" class="form-control" name="frontendFiles" multiple accept=".js,.jsx,.ts,.tsx,.vue,.html,.css,.scss">
+                                <label class="form-label">Frontend Code Files (one per line)</label>
+                                <textarea class="form-control" name="frontendFiles" rows="3" placeholder="/absolute/path/to/frontend.js&#10;/absolute/path/to/component.jsx"></textarea>
+                                <small class="form-text text-muted">Enter absolute file paths, one per line. Use the file picker below to select files - it will add the filenames to the list, then you can edit them to include the full paths.</small>
+                                <div class="d-flex gap-2 mt-2">
+                                    <input type="file" class="form-control" name="frontendFilesPicker" multiple accept=".js,.jsx,.ts,.tsx,.vue,.html,.css,.scss" onchange="updateFilePaths(this, 'frontendFiles')">
+                                    <button type="button" class="btn btn-outline-info btn-sm" onclick="showPathHelp()" title="How to get file paths">
+                                        <i class="fas fa-question-circle"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Backend Code Files</label>
-                                <input type="file" class="form-control" name="backendFiles" multiple accept=".py,.java,.cpp,.c,.cs,.go,.rs,.php,.rb">
+                                <label class="form-label">Backend Code Files (one per line)</label>
+                                <textarea class="form-control" name="backendFiles" rows="3" placeholder="/absolute/path/to/backend.py&#10;/absolute/path/to/api.js"></textarea>
+                                <small class="form-text text-muted">Enter absolute file paths, one per line. Use the file picker below to select files - it will add the filenames to the list, then you can edit them to include the full paths.</small>
+                                <div class="d-flex gap-2 mt-2">
+                                    <input type="file" class="form-control" name="backendFilesPicker" multiple accept=".py,.java,.cpp,.c,.cs,.go,.rs,.php,.rb" onchange="updateFilePaths(this, 'backendFiles')">
+                                    <button type="button" class="btn btn-outline-info btn-sm" onclick="showPathHelp()" title="How to get file paths">
+                                        <i class="fas fa-question-circle"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -316,6 +337,71 @@
             }
         }
 
+        // Update file paths from file picker
+        function updateFilePaths(fileInput, targetTextareaName) {
+            const files = Array.from(fileInput.files);
+            const paths = files.map(file => {
+                // In a web browser, we can't get the full path, so we'll show the filename
+                // Users can then edit it to add the full path
+                return file.name;
+            });
+            
+            const textarea = fileInput.closest('.verification-section').querySelector(`textarea[name="${targetTextareaName}"]`);
+            const currentPaths = textarea.value.split('\n').filter(path => path.trim());
+            const allPaths = [...currentPaths, ...paths];
+            textarea.value = allPaths.join('\n');
+            
+            // Focus on the textarea so user can edit the paths
+            if (paths.length > 0) {
+                textarea.focus();
+                // Show a subtle notification instead of an alert
+                showNotification(`Added ${paths.length} file(s) to the list. Please edit the paths above to include the full absolute paths.`, 'info');
+            }
+        }
+
+        // Show notification instead of alert
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'info' ? 'primary' : type} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // Show help for getting file paths
+        function showPathHelp() {
+            const helpMessage = `
+                <h6>How to get file paths:</h6>
+                <ol>
+                    <li><strong>Use the file picker</strong> to select your files</li>
+                    <li><strong>Edit the textarea</strong> to add the full absolute paths</li>
+                    <li><strong>Common ways to get paths:</strong>
+                        <ul>
+                            <li>Right-click file in file manager → "Copy path"</li>
+                            <li>Drag file from file manager to terminal</li>
+                            <li>Use <code>pwd</code> command in terminal to get current directory</li>
+                            <li>Use <code>find</code> command to locate files</li>
+                        </ul>
+                    </li>
+                </ol>
+                <p><strong>Example:</strong> If you select "README.md", edit it to: <code>/home/user/project/README.md</code></p>
+            `;
+            
+            showNotification(helpMessage, 'info');
+        }
+
         // Load project
         function loadProject() {
             document.getElementById('projectFile').click();
@@ -369,6 +455,11 @@
                         lastSection.querySelector('textarea[name="verificationInstructions"]').value = section.verification_instructions || '';
                         lastSection.querySelector('input[name="overrideSystemPrompt"]').checked = section.override_global_system_prompt || false;
                         lastSection.querySelector('input[name="overrideInstructions"]').checked = section.override_global_instructions || false;
+                        
+                        // Populate file paths
+                        lastSection.querySelector('textarea[name="documentationFiles"]').value = (section.documentation_files || []).join('\n');
+                        lastSection.querySelector('textarea[name="frontendFiles"]').value = (section.frontend_code_files || []).join('\n');
+                        lastSection.querySelector('textarea[name="backendFiles"]').value = (section.backend_code_files || []).join('\n');
                     }
                 });
             }
@@ -386,11 +477,27 @@
             const sections = [];
             const sectionElements = document.querySelectorAll('.verification-section');
             sectionElements.forEach(section => {
+                // Parse file paths from textareas
+                const docFiles = section.querySelector('textarea[name="documentationFiles"]').value
+                    .split('\n')
+                    .map(path => path.trim())
+                    .filter(path => path.length > 0);
+                
+                const frontendFiles = section.querySelector('textarea[name="frontendFiles"]').value
+                    .split('\n')
+                    .map(path => path.trim())
+                    .filter(path => path.length > 0);
+                
+                const backendFiles = section.querySelector('textarea[name="backendFiles"]').value
+                    .split('\n')
+                    .map(path => path.trim())
+                    .filter(path => path.length > 0);
+                
                 const sectionData = {
                     name: section.querySelector('input[name="verificationName"]').value,
-                    documentation_files: [], // File paths would be handled differently in a real implementation
-                    frontend_code_files: [],
-                    backend_code_files: [],
+                    documentation_files: docFiles,
+                    frontend_code_files: frontendFiles,
+                    backend_code_files: backendFiles,
                     override_global_system_prompt: section.querySelector('input[name="overrideSystemPrompt"]').checked,
                     override_global_instructions: section.querySelector('input[name="overrideInstructions"]').checked,
                     verification_system_prompt: section.querySelector('textarea[name="verificationSystemPrompt"]').value,
@@ -450,11 +557,27 @@
                 // Collect verification sections
                 const sectionElements = document.querySelectorAll('.verification-section');
                 sectionElements.forEach(section => {
+                    // Parse file paths from textareas
+                    const docFiles = section.querySelector('textarea[name="documentationFiles"]').value
+                        .split('\n')
+                        .map(path => path.trim())
+                        .filter(path => path.length > 0);
+                    
+                    const frontendFiles = section.querySelector('textarea[name="frontendFiles"]').value
+                        .split('\n')
+                        .map(path => path.trim())
+                        .filter(path => path.length > 0);
+                    
+                    const backendFiles = section.querySelector('textarea[name="backendFiles"]').value
+                        .split('\n')
+                        .map(path => path.trim())
+                        .filter(path => path.length > 0);
+                    
                     const sectionData = {
                         name: section.querySelector('input[name="verificationName"]').value,
-                        documentation_files: [], // In a real implementation, you'd handle file uploads
-                        frontend_code_files: [],
-                        backend_code_files: [],
+                        documentation_files: docFiles,
+                        frontend_code_files: frontendFiles,
+                        backend_code_files: backendFiles,
                         override_global_system_prompt: section.querySelector('input[name="overrideSystemPrompt"]').checked,
                         override_global_instructions: section.querySelector('input[name="overrideInstructions"]').checked,
                         verification_system_prompt: section.querySelector('textarea[name="verificationSystemPrompt"]').value,
