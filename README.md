@@ -1,27 +1,42 @@
 # PRD Code Verifier
 
-A web application that verifies code against documentation using AI. This tool helps ensure that your implementation matches your project requirements and documentation.
+A comprehensive web application that verifies code implementations against documentation using AI. This tool helps ensure that your code matches your project requirements and documentation specifications.
 
-## Features
+## 🚀 Features
 
-- **Project Management**: Create, save, and load verification projects
-- **Multiple AI Providers**: Support for OpenAI, Google Gemini, Ollama, and LM Studio
+### Core Functionality
+
+- **Project Management**: Create, save, and load verification projects as JSON files
+- **Multi-AI Provider Support**: Works with OpenAI, Google Gemini, Ollama, and LM Studio
 - **Flexible Verification**: Configure multiple verification sections with different documentation and code files
 - **Custom Prompts**: Override global system prompts and instructions per verification
 - **Report Generation**: Generate detailed markdown reports for each verification
-- **Web Interface**: Easy-to-use web interface for managing verifications
+- **Project-Specific Organization**: Reports are organized in project-specific folders
+- **Debug Mode**: Save complete prompts sent to AI when DEBUG is enabled
 
-## Installation
+### Web Interface
 
-This project uses [UV](https://github.com/astral-sh/uv) for dependency management.
+- **Modern UI**: Clean, responsive web interface built with Bootstrap
+- **File Path Management**: Hybrid file selection system with textarea input for absolute paths
+- **Real-time Configuration**: Dynamic AI provider configuration with environment defaults
+- **Batch Processing**: Run all verifications or specific ones
+- **Download Reports**: Direct download of generated reports
 
-1. Install UV if you haven't already:
+## 📋 Requirements
+
+- Python 3.9+
+- [UV](https://github.com/astral-sh/uv) package manager
+- One of the supported AI providers (see Configuration section)
+
+## 🛠️ Installation
+
+1. **Install UV** (if not already installed):
 
    ```bash
    curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
 
-2. Clone the repository and install dependencies:
+2. **Clone and setup**:
 
    ```bash
    git clone <repository-url>
@@ -29,135 +44,316 @@ This project uses [UV](https://github.com/astral-sh/uv) for dependency managemen
    uv sync
    ```
 
-3. Copy the environment configuration:
+3. **Configure environment**:
 
    ```bash
    cp env.example .env
+   # Edit .env with your AI provider credentials
    ```
 
-4. Edit `.env` file with your AI provider credentials:
+4. **Start the application**:
 
    ```bash
-   # For OpenAI
-   DEFAULT_AI_PROVIDER=openai
-   OPENAI_API_KEY=your_api_key_here
+   # Easy way
+   ./start.sh
 
-   # For Google Gemini
-   # DEFAULT_AI_PROVIDER=gemini
-   # GEMINI_API_KEY=your_api_key_here
-
-   # For Ollama (local)
-   # DEFAULT_AI_PROVIDER=ollama
-   # OLLAMA_BASE_URL=http://localhost:11434
-
-   # For LM Studio (local)
-   # DEFAULT_AI_PROVIDER=lm_studio
-   # LM_STUDIO_BASE_URL=http://localhost:1234/v1
-   ```
-
-## Usage
-
-1. Start the application:
-
-   ```bash
+   # Or manually
    uv run main.py
    ```
 
-2. Open your browser to `http://localhost:8000`
+5. **Access the web interface**:
+   Open your browser to `http://localhost:8000`
 
-3. Create a new project:
+## ⚙️ Configuration
 
-   - Enter project name and output folder
-   - Configure global system prompt and instructions
-   - Add verification sections with documentation and code files
-   - Save the project
+### Environment Variables
 
-4. Run verifications:
-   - Configure AI provider settings
-   - Click "Run All Verifications" or "Run Selected"
-   - Download generated reports
+Create a `.env` file based on `env.example`:
 
-## Project Structure
+```bash
+# AI Provider Configuration
+DEFAULT_AI_PROVIDER=lm_studio  # openai, gemini, ollama, lm_studio
+
+# OpenAI Configuration
+OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-3.5-turbo
+
+# Google Gemini Configuration
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-pro
+
+# Ollama Configuration (Local)
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama2
+
+# LM Studio Configuration (Local)
+LM_STUDIO_BASE_URL=http://localhost:1234/v1
+LM_STUDIO_MODEL=qwen/qwen3-30b-a3b-2507
+
+# Application Configuration
+DEBUG=True  # Set to False to disable prompt saving
+HOST=0.0.0.0
+PORT=8000
+```
+
+### AI Provider Setup
+
+#### OpenAI
+
+- Get API key from [OpenAI Platform](https://platform.openai.com/)
+- Set `DEFAULT_AI_PROVIDER=openai`
+- Add your API key to `OPENAI_API_KEY`
+
+#### Google Gemini
+
+- Get API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+- Set `DEFAULT_AI_PROVIDER=gemini`
+- Add your API key to `GEMINI_API_KEY`
+
+#### Ollama (Local)
+
+- Install [Ollama](https://ollama.ai/)
+- Pull a model: `ollama pull llama2`
+- Set `DEFAULT_AI_PROVIDER=ollama`
+- No API key required
+
+#### LM Studio (Local)
+
+- Install [LM Studio](https://lmstudio.ai/)
+- Load a model and start the local server
+- Set `DEFAULT_AI_PROVIDER=lm_studio`
+- No API key required
+
+## 📖 Usage Guide
+
+### 1. Creating a Project
+
+1. **Open the web interface** at `http://localhost:8000`
+2. **Configure project settings**:
+
+   - Project Name: Choose a descriptive name
+   - Output Folder: Where reports will be saved
+   - Global System Prompt: Default prompt for all verifications
+   - Global Instructions: Default instructions for all verifications
+
+3. **Add verification sections**:
+
+   - Click "Add Section" to create verification sections
+   - Each section can have:
+     - Documentation files (markdown, text, PDF)
+     - Frontend code files (JS, TS, Vue, React, etc.)
+     - Backend code files (Python, Java, C++, etc.)
+     - Custom system prompts and instructions (optional)
+
+4. **Configure AI settings**:
+   - Select AI provider
+   - Set model and parameters
+   - The interface will auto-populate from your `.env` file
+
+### 2. File Path Management
+
+The application uses a hybrid approach for file selection:
+
+1. **Use file pickers** to select files (for convenience)
+2. **Edit the textarea** to add full absolute paths
+3. **One file path per line** in each textarea
+4. **Click the help button (?) ** for guidance on getting file paths
+
+Example file paths:
+
+```
+/home/user/project/docs/README.md
+/home/user/project/src/components/Button.jsx
+/home/user/project/api/routes/users.py
+```
+
+### 3. Running Verifications
+
+1. **Save your project** first (optional but recommended)
+2. **Click "Run All Verifications"** to process all sections
+3. **Or click "Run Selected"** to run specific verifications
+4. **Monitor progress** with the loading indicator
+5. **Download reports** from the results section
+
+### 4. Understanding Reports
+
+Each verification generates:
+
+- **`{verification_name}_report.md`**: AI analysis of code vs documentation
+- **`{verification_name}_prompt.md`**: Complete prompt sent to AI (only when DEBUG=True)
+
+Reports are organized in project-specific folders:
+
+```
+output/
+└── My Project/
+    ├── API Verification_report.md
+    ├── API Verification_prompt.md
+    ├── Database Schema_report.md
+    └── Database Schema_prompt.md
+```
+
+## 🏗️ Project Structure
 
 ```
 prd-code-verifier/
 ├── main.py                 # Application entry point
 ├── web_app.py             # FastAPI web application
-├── models.py              # Pydantic models
+├── models.py              # Pydantic data models
 ├── ai_providers.py        # AI provider implementations
 ├── verification_engine.py # Core verification logic
 ├── config.py              # Configuration management
-├── templates/             # HTML templates
-│   └── index.html
+├── templates/
+│   └── index.html         # Web interface
 ├── static/                # Static files (CSS, JS)
 ├── projects/              # Saved project files
-└── reports/               # Generated verification reports
+├── output/                # Generated reports
+├── env.example            # Environment configuration template
+├── example_project.json   # Example project file
+├── start.sh               # Startup script
+└── README.md              # This file
 ```
 
-## API Endpoints
+## 🔌 API Endpoints
 
-- `GET /` - Main web interface
+### Web Interface
+
+- `GET /` - Main application page
+
+### Configuration
+
 - `GET /api/providers` - List available AI providers
+- `GET /api/config/default-ai` - Get default AI configuration
+
+### Project Management
+
 - `POST /api/projects/save` - Save project configuration
 - `GET /api/projects` - List saved projects
 - `POST /api/projects/load` - Load project from file
+
+### Verification
+
 - `POST /api/verification/run` - Run verification process
-- `GET /api/reports/{filename}` - Download verification report
+- `GET /api/reports/{project_name}/{filename}` - Download verification report
 
-## Configuration
+## 🔧 Development
 
-The application supports multiple AI providers:
+### Setup Development Environment
 
-### OpenAI
+```bash
+uv sync --dev
+```
 
-- Requires API key
-- Default model: gpt-3.5-turbo
-- Base URL: https://api.openai.com/v1
+### Run Tests
 
-### Google Gemini
+```bash
+uv run pytest
+```
 
-- Requires API key
-- Default model: gemini-pro
-- Base URL: https://generativelanguage.googleapis.com
+### Code Formatting
 
-### Ollama (Local)
+```bash
+uv run black .
+uv run isort .
+```
 
-- No API key required
-- Default model: llama2
-- Base URL: http://localhost:11434
+### Linting
 
-### LM Studio (Local)
+```bash
+uv run flake8
+```
 
-- No API key required
-- Default model: local-model
-- Base URL: http://localhost:1234/v1
+### Project Dependencies
 
-## Development
+The project uses these main dependencies:
 
-1. Install development dependencies:
+- **FastAPI**: Web framework
+- **Pydantic**: Data validation and settings
+- **Uvicorn**: ASGI server
+- **aiofiles**: Async file operations
+- **OpenAI**: OpenAI API client
+- **google-generativeai**: Google Gemini API client
+- **ollama**: Ollama client
+- **python-dotenv**: Environment variable management
 
-   ```bash
-   uv sync --dev
-   ```
+## 📝 Example Project
 
-2. Run tests:
+See `example_project.json` for a sample project configuration:
 
-   ```bash
-   uv run pytest
-   ```
+```json
+{
+  "project_name": "Example PRD Verification",
+  "output_folder": "./reports",
+  "global_system_prompt": "You are an expert software engineer...",
+  "global_instructions": "Please provide a detailed analysis...",
+  "verification_sections": [
+    {
+      "name": "API Endpoints Verification",
+      "documentation_files": [],
+      "frontend_code_files": [],
+      "backend_code_files": [],
+      "override_global_system_prompt": false,
+      "override_global_instructions": false
+    }
+  ]
+}
+```
 
-3. Format code:
+## 🐛 Troubleshooting
 
-   ```bash
-   uv run black .
-   uv run isort .
-   ```
+### Common Issues
 
-4. Lint code:
-   ```bash
-   uv run flake8
-   ```
+1. **"Error saving project"**
 
-## License
+   - Ensure all required fields are filled
+   - Check that verification sections have names
+
+2. **"Report not found"**
+
+   - Verify the project name in the download URL
+   - Check that the verification completed successfully
+
+3. **"AI API error"**
+
+   - Verify your API key is correct
+   - Check that the AI service is running (for local providers)
+   - Ensure you have sufficient API credits
+
+4. **File paths not working**
+   - Use absolute paths (starting with `/`)
+   - Ensure files exist and are readable
+   - Check file permissions
+
+### Debug Mode
+
+Set `DEBUG=True` in your `.env` file to:
+
+- Save complete prompts sent to AI
+- Enable detailed error logging
+- Help troubleshoot verification issues
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
 
 This project is licensed under the MIT License.
+
+## 🆘 Support
+
+For issues and questions:
+
+1. Check the troubleshooting section
+2. Review the example project
+3. Check your environment configuration
+4. Open an issue on GitHub
+
+---
+
+**Happy Verifying!** 🎉
