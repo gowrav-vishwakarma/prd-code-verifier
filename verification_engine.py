@@ -9,6 +9,7 @@ from pathlib import Path
 import aiofiles
 from models import ProjectConfig, VerificationSection, AIProviderConfig, VerificationResult
 from ai_providers import AIProviderFactory
+from config import Config
 
 
 class VerificationEngine:
@@ -96,12 +97,13 @@ class VerificationEngine:
             # Get AI response
             response = await self.ai_provider.generate_response(prompt)
             
+            # Create project-specific output directory
+            project_output_dir = os.path.join(self.project_config.output_folder, self.project_config.project_name)
+            os.makedirs(project_output_dir, exist_ok=True)
+            
             # Save the report
             report_filename = f"{section.name}_report.md"
-            report_path = os.path.join(self.project_config.output_folder, report_filename)
-            
-            # Ensure output directory exists
-            os.makedirs(self.project_config.output_folder, exist_ok=True)
+            report_path = os.path.join(project_output_dir, report_filename)
             
             # Write the report
             async with aiofiles.open(report_path, 'w', encoding='utf-8') as f:
@@ -109,6 +111,20 @@ class VerificationEngine:
                 await f.write(f"**Generated on:** {asyncio.get_event_loop().time()}\n\n")
                 await f.write("## AI Analysis\n\n")
                 await f.write(response)
+            
+            # Save the prompt if DEBUG is enabled
+            prompt_path = None
+            if Config.DEBUG:
+                prompt_filename = f"{section.name}_prompt.md"
+                prompt_path = os.path.join(project_output_dir, prompt_filename)
+                
+                async with aiofiles.open(prompt_path, 'w', encoding='utf-8') as f:
+                    await f.write(f"# Verification Prompt: {section.name}\n\n")
+                    await f.write(f"**Generated on:** {asyncio.get_event_loop().time()}\n\n")
+                    await f.write("## Complete Prompt Sent to AI\n\n")
+                    await f.write("```\n")
+                    await f.write(prompt)
+                    await f.write("\n```\n")
             
             return VerificationResult(
                 verification_name=section.name,

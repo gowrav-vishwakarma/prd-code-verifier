@@ -167,18 +167,32 @@ async def run_verification(request: VerificationRequest):
         raise HTTPException(status_code=500, detail=f"Error running verification: {str(e)}")
 
 
-@app.get("/api/reports/{filename}")
-async def get_report(filename: str):
+@app.get("/api/reports/{project_name}/{filename}")
+async def get_report(project_name: str, filename: str):
     """Download a verification report."""
     # Security: only allow .md files
     if not filename.endswith('.md'):
         raise HTTPException(status_code=400, detail="Invalid file type")
     
-    # Find the report file
+    # Find the report file in any output folder
     for root, dirs, files in os.walk("."):
         if filename in files:
-            file_path = os.path.join(root, filename)
-            return FileResponse(file_path, media_type='text/markdown')
+            # Check if this is in a project folder
+            path_parts = root.split(os.sep)
+            if len(path_parts) >= 2 and path_parts[-1] == project_name:
+                file_path = os.path.join(root, filename)
+                if os.path.exists(file_path):
+                    return FileResponse(file_path, media_type='text/markdown')
+    
+    # Also check common output directories
+    common_output_dirs = ["/tmp/reports", "./reports", "./output"]
+    for output_dir in common_output_dirs:
+        if os.path.exists(output_dir):
+            project_dir = os.path.join(output_dir, project_name)
+            if os.path.exists(project_dir):
+                file_path = os.path.join(project_dir, filename)
+                if os.path.exists(file_path):
+                    return FileResponse(file_path, media_type='text/markdown')
     
     raise HTTPException(status_code=404, detail="Report not found")
 
