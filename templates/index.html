@@ -564,9 +564,25 @@
             resultDiv.style.display = 'block';
         }
 
+        // Load default AI configuration
+        async function loadDefaultAIConfig() {
+            try {
+                const response = await fetch('/api/config/default-ai');
+                if (response.ok) {
+                    const config = await response.json();
+                    document.getElementById('aiProvider').value = config.provider;
+                    document.getElementById('aiModel').value = config.model;
+                    document.getElementById('aiBaseUrl').value = config.base_url || '';
+                    document.getElementById('aiApiKey').value = config.api_key || '';
+                }
+            } catch (error) {
+                console.error('Error loading default AI config:', error);
+            }
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            updateAIProviderConfig();
+            loadDefaultAIConfig();
         });
     </script>
 </body>

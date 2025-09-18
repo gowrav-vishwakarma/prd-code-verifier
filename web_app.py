@@ -19,6 +19,7 @@ from models import (
     VerificationRequest, VerificationResponse, AIProvider
 )
 from verification_engine import VerificationEngine
+from config import Config
 
 
 app = FastAPI(title="PRD Code Verifier", version="0.1.0")
@@ -44,6 +45,18 @@ async def index(request: Request):
 async def get_ai_providers():
     """Get list of available AI providers."""
     return {"providers": [provider.value for provider in AIProvider]}
+
+
+@app.get("/api/config/default-ai")
+async def get_default_ai_config():
+    """Get default AI configuration from environment."""
+    default_config = Config.get_default_ai_config()
+    return {
+        "provider": default_config.provider.value,
+        "model": default_config.model,
+        "base_url": default_config.base_url,
+        "api_key": default_config.api_key if default_config.api_key else ""
+    }
 
 
 @app.post("/api/projects/save")
