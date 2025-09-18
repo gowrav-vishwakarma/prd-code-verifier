@@ -46,3 +46,5 @@ node_modules/
 *.orig
 # Project files
 *.project.json
+
+projects/

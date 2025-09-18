@@ -377,10 +377,10 @@
         // Save project
         async function saveProject() {
             const formData = new FormData();
-            formData.append('projectName', document.getElementById('projectName').value);
-            formData.append('outputFolder', document.getElementById('outputFolder').value);
-            formData.append('globalSystemPrompt', document.getElementById('globalSystemPrompt').value);
-            formData.append('globalInstructions', document.getElementById('globalInstructions').value);
+            formData.append('project_name', document.getElementById('projectName').value);
+            formData.append('output_folder', document.getElementById('outputFolder').value);
+            formData.append('global_system_prompt', document.getElementById('globalSystemPrompt').value);
+            formData.append('global_instructions', document.getElementById('globalInstructions').value);
             
             // Collect verification sections
             const sections = [];
