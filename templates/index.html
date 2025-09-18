@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRD Code Verifier</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .verification-section {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f8f9fa;
+        }
+        .file-input-group {
+            margin-bottom: 10px;
+        }
+        .ai-config-section {
+            background-color: #e3f2fd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .loading {
+            display: none;
+        }
+        .result-section {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+                    <div class="container-fluid">
+                        <a class="navbar-brand" href="#">
+                            <i class="fas fa-code-branch"></i> PRD Code Verifier
+                        </a>
+                    </div>
+                </nav>
+            </div>
+        </div>
+
+        <div class="container mt-4">
+            <!-- Project Management Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-project-diagram"></i> Project Management</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <button class="btn btn-outline-primary" onclick="loadProject()">
+                                        <i class="fas fa-folder-open"></i> Load Project
+                                    </button>
+                                    <input type="file" id="projectFile" accept=".json" style="display: none;" onchange="handleProjectLoad(event)">
+                                </div>
+                                <div class="col-md-6">
+                                    <button class="btn btn-success" onclick="saveProject()">
+                                        <i class="fas fa-save"></i> Save Project
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Form -->
+            <form id="mainForm">
+                <!-- Project Configuration -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-cog"></i> Project Configuration</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="projectName" class="form-label">Project Name</label>
+                                            <input type="text" class="form-control" id="projectName" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="outputFolder" class="form-label">Output Folder</label>
+                                            <input type="text" class="form-control" id="outputFolder" placeholder="/path/to/output" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="globalSystemPrompt" class="form-label">Global System Prompt</label>
+                                            <textarea class="form-control" id="globalSystemPrompt" rows="3" placeholder="Enter global system prompt..."></textarea>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="globalInstructions" class="form-label">Global Instructions</label>
+                                            <textarea class="form-control" id="globalInstructions" rows="3" placeholder="Enter global instructions..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Configuration -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-robot"></i> AI Configuration</h5>
+                            </div>
+                            <div class="card-body ai-config-section">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="aiProvider" class="form-label">AI Provider</label>
+                                            <select class="form-select" id="aiProvider" onchange="updateAIProviderConfig()">
+                                                <option value="openai">OpenAI</option>
+                                                <option value="gemini">Google Gemini</option>
+                                                <option value="ollama">Ollama</option>
+                                                <option value="lm_studio">LM Studio</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="aiModel" class="form-label">Model</label>
+                                            <input type="text" class="form-control" id="aiModel" value="gpt-3.5-turbo">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="aiApiKey" class="form-label">API Key</label>
+                                            <input type="password" class="form-control" id="aiApiKey" placeholder="Enter API key">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="aiBaseUrl" class="form-label">Base URL (Optional)</label>
+                                            <input type="text" class="form-control" id="aiBaseUrl" placeholder="Custom endpoint URL">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Verification Sections -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5><i class="fas fa-check-circle"></i> Verification Sections</h5>
+                                <button type="button" class="btn btn-primary" onclick="addVerificationSection()">
+                                    <i class="fas fa-plus"></i> Add Section
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="verificationSections">
+                                    <!-- Verification sections will be added here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Run Verification -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-play"></i> Run Verification</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-success" onclick="runAllVerifications()">
+                                        <i class="fas fa-play"></i> Run All Verifications
+                                    </button>
+                                    <button type="button" class="btn btn-warning" onclick="runSelectedVerifications()">
+                                        <i class="fas fa-play-circle"></i> Run Selected
+                                    </button>
+                                </div>
+                                <div class="loading mt-3">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Running verification...</span>
+                                    </div>
+                                    <span class="ms-2">Running verification...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Results Section -->
+            <div class="row result-section">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-chart-bar"></i> Verification Results</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="resultsContent">
+                                <!-- Results will be displayed here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let verificationSectionCount = 0;
+
+        // Add verification section
+        function addVerificationSection() {
+            const container = document.getElementById('verificationSections');
+            const sectionHtml = `
+                <div class="verification-section" id="section-${verificationSectionCount}">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6>Verification Section ${verificationSectionCount + 1}</h6>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeVerificationSection(${verificationSectionCount})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Verification Name</label>
+                                <input type="text" class="form-control" name="verificationName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Documentation Files</label>
+                                <input type="file" class="form-control" name="documentationFiles" multiple accept=".md,.txt,.pdf">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Frontend Code Files</label>
+                                <input type="file" class="form-control" name="frontendFiles" multiple accept=".js,.jsx,.ts,.tsx,.vue,.html,.css,.scss">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Backend Code Files</label>
+                                <input type="file" class="form-control" name="backendFiles" multiple accept=".py,.java,.cpp,.c,.cs,.go,.rs,.php,.rb">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="overrideSystemPrompt">
+                                    <label class="form-check-label">Override Global System Prompt</label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Verification System Prompt</label>
+                                <textarea class="form-control" name="verificationSystemPrompt" rows="2"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="overrideInstructions">
+                                    <label class="form-check-label">Override Global Instructions</label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Verification Instructions</label>
+                                <textarea class="form-control" name="verificationInstructions" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', sectionHtml);
+            verificationSectionCount++;
+        }
+
+        // Remove verification section
+        function removeVerificationSection(index) {
+            const section = document.getElementById(`section-${index}`);
+            if (section) {
+                section.remove();
+            }
+        }
+
+        // Update AI provider configuration
+        function updateAIProviderConfig() {
+            const provider = document.getElementById('aiProvider').value;
+            const modelField = document.getElementById('aiModel');
+            const baseUrlField = document.getElementById('aiBaseUrl');
+            
+            // Set default models and URLs based on provider
+            switch(provider) {
+                case 'openai':
+                    modelField.value = 'gpt-3.5-turbo';
+                    baseUrlField.placeholder = 'https://api.openai.com/v1';
+                    break;
+                case 'gemini':
+                    modelField.value = 'gemini-pro';
+                    baseUrlField.placeholder = 'https://generativelanguage.googleapis.com';
+                    break;
+                case 'ollama':
+                    modelField.value = 'llama2';
+                    baseUrlField.placeholder = 'http://localhost:11434';
+                    break;
+                case 'lm_studio':
+                    modelField.value = 'local-model';
+                    baseUrlField.placeholder = 'http://localhost:1234/v1';
+                    break;
+            }
+        }
+
+        // Load project
+        function loadProject() {
+            document.getElementById('projectFile').click();
+        }
+
+        // Handle project file load
+        async function handleProjectLoad(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/projects/load', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const projectData = await response.json();
+                    populateForm(projectData);
+                } else {
+                    alert('Error loading project file');
+                }
+            } catch (error) {
+                alert('Error loading project: ' + error.message);
+            }
+        }
+
+        // Populate form with project data
+        function populateForm(projectData) {
+            document.getElementById('projectName').value = projectData.project_name || '';
+            document.getElementById('outputFolder').value = projectData.output_folder || '';
+            document.getElementById('globalSystemPrompt').value = projectData.global_system_prompt || '';
+            document.getElementById('globalInstructions').value = projectData.global_instructions || '';
+
+            // Clear existing sections
+            document.getElementById('verificationSections').innerHTML = '';
+            verificationSectionCount = 0;
+
+            // Add verification sections
+            if (projectData.verification_sections) {
+                projectData.verification_sections.forEach(section => {
+                    addVerificationSection();
+                    // Populate the last added section
+                    const lastSection = document.querySelector(`#section-${verificationSectionCount - 1}`);
+                    if (lastSection) {
+                        lastSection.querySelector('input[name="verificationName"]').value = section.name || '';
+                        lastSection.querySelector('textarea[name="verificationSystemPrompt"]').value = section.verification_system_prompt || '';
+                        lastSection.querySelector('textarea[name="verificationInstructions"]').value = section.verification_instructions || '';
+                        lastSection.querySelector('input[name="overrideSystemPrompt"]').checked = section.override_global_system_prompt || false;
+                        lastSection.querySelector('input[name="overrideInstructions"]').checked = section.override_global_instructions || false;
+                    }
+                });
+            }
+        }
+
+        // Save project
+        async function saveProject() {
+            const formData = new FormData();
+            formData.append('projectName', document.getElementById('projectName').value);
+            formData.append('outputFolder', document.getElementById('outputFolder').value);
+            formData.append('globalSystemPrompt', document.getElementById('globalSystemPrompt').value);
+            formData.append('globalInstructions', document.getElementById('globalInstructions').value);
+            
+            // Collect verification sections
+            const sections = [];
+            const sectionElements = document.querySelectorAll('.verification-section');
+            sectionElements.forEach(section => {
+                const sectionData = {
+                    name: section.querySelector('input[name="verificationName"]').value,
+                    documentation_files: [], // File paths would be handled differently in a real implementation
+                    frontend_code_files: [],
+                    backend_code_files: [],
+                    override_global_system_prompt: section.querySelector('input[name="overrideSystemPrompt"]').checked,
+                    override_global_instructions: section.querySelector('input[name="overrideInstructions"]').checked,
+                    verification_system_prompt: section.querySelector('textarea[name="verificationSystemPrompt"]').value,
+                    verification_instructions: section.querySelector('textarea[name="verificationInstructions"]').value
+                };
+                sections.push(sectionData);
+            });
+            
+            formData.append('verification_data', JSON.stringify(sections));
+
+            try {
+                const response = await fetch('/api/projects/save', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    alert('Project saved successfully as: ' + result.filename);
+                } else {
+                    alert('Error saving project');
+                }
+            } catch (error) {
+                alert('Error saving project: ' + error.message);
+            }
+        }
+
+        // Run all verifications
+        async function runAllVerifications() {
+            await runVerifications(null);
+        }
+
+        // Run selected verifications
+        async function runSelectedVerifications() {
+            // For now, run all - in a real implementation, you'd have checkboxes to select specific ones
+            await runVerifications(null);
+        }
+
+        // Run verifications
+        async function runVerifications(verificationNames) {
+            const loadingDiv = document.querySelector('.loading');
+            const resultDiv = document.querySelector('.result-section');
+            
+            loadingDiv.style.display = 'block';
+            resultDiv.style.display = 'none';
+
+            try {
+                // Collect form data
+                const projectData = {
+                    project_name: document.getElementById('projectName').value,
+                    output_folder: document.getElementById('outputFolder').value,
+                    global_system_prompt: document.getElementById('globalSystemPrompt').value,
+                    global_instructions: document.getElementById('globalInstructions').value,
+                    verification_sections: []
+                };
+
+                // Collect verification sections
+                const sectionElements = document.querySelectorAll('.verification-section');
+                sectionElements.forEach(section => {
+                    const sectionData = {
+                        name: section.querySelector('input[name="verificationName"]').value,
+                        documentation_files: [], // In a real implementation, you'd handle file uploads
+                        frontend_code_files: [],
+                        backend_code_files: [],
+                        override_global_system_prompt: section.querySelector('input[name="overrideSystemPrompt"]').checked,
+                        override_global_instructions: section.querySelector('input[name="overrideInstructions"]').checked,
+                        verification_system_prompt: section.querySelector('textarea[name="verificationSystemPrompt"]').value,
+                        verification_instructions: section.querySelector('textarea[name="verificationInstructions"]').value
+                    };
+                    projectData.verification_sections.push(sectionData);
+                });
+
+                const aiData = {
+                    provider: document.getElementById('aiProvider').value,
+                    api_key: document.getElementById('aiApiKey').value,
+                    base_url: document.getElementById('aiBaseUrl').value,
+                    model: document.getElementById('aiModel').value,
+                    temperature: 0.7,
+                    max_tokens: null
+                };
+
+                const requestData = {
+                    project_config: projectData,
+                    ai_config: aiData,
+                    verification_names: verificationNames
+                };
+
+                const response = await fetch('/api/verification/run', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (response.ok) {
+                    const results = await response.json();
+                    displayResults(results);
+                } else {
+                    alert('Error running verification');
+                }
+            } catch (error) {
+                alert('Error running verification: ' + error.message);
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        // Display results
+        function displayResults(results) {
+            const resultDiv = document.querySelector('.result-section');
+            const contentDiv = document.getElementById('resultsContent');
+            
+            let html = `
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">${results.total_verifications}</h5>
+                                <p class="card-text">Total Verifications</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title text-success">${results.successful_verifications}</h5>
+                                <p class="card-text">Successful</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title text-danger">${results.failed_verifications}</h5>
+                                <p class="card-text">Failed</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            results.results.forEach(result => {
+                const statusClass = result.success ? 'success' : 'danger';
+                const statusIcon = result.success ? 'check-circle' : 'times-circle';
+                
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="fas fa-${statusIcon} text-${statusClass}"></i>
+                                ${result.verification_name}
+                            </h6>
+                            ${result.success && result.report_file_path ? 
+                                `<a href="/api/reports/${result.report_file_path.split('/').pop()}" class="btn btn-sm btn-outline-primary" download>
+                                    <i class="fas fa-download"></i> Download Report
+                                </a>` : ''
+                            }
+                        </div>
+                        <div class="card-body">
+                            ${result.success ? 
+                                `<p class="text-success">Verification completed successfully!</p>` :
+                                `<p class="text-danger">Error: ${result.error_message}</p>`
+                            }
+                        </div>
+                    </div>
+                `;
+            });
+
+            contentDiv.innerHTML = html;
+            resultDiv.style.display = 'block';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateAIProviderConfig();
+        });
+    </script>
+</body>
+</html>
