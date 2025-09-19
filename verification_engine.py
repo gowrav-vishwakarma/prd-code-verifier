@@ -4,7 +4,7 @@ Verification engine that combines documentation and code for AI analysis.
 
 import os
 import asyncio
-from typing import List, Optional
+from typing import List, Optional, Callable, Dict, Any
 from pathlib import Path
 import aiofiles
 from datetime import datetime
@@ -16,10 +16,26 @@ from config import Config
 class VerificationEngine:
     """Engine for running code verification against documentation."""
     
-    def __init__(self, project_config: ProjectConfig, ai_config: AIProviderConfig):
+    def __init__(self, project_config: ProjectConfig, ai_config: AIProviderConfig, progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None):
         self.project_config = project_config
         self.ai_config = ai_config
         self.ai_provider = AIProviderFactory.create_provider(ai_config)
+        self.progress_callback = progress_callback
+        
+        # Pass progress callback to AI provider
+        self.ai_provider.progress_callback = progress_callback
+    
+    async def _emit_progress(self, event_type: str, message: str, data: Optional[Dict[str, Any]] = None):
+        """Emit progress event if callback is available."""
+        if self.progress_callback:
+            event = {
+                "type": event_type,
+                "message": message,
+                "timestamp": datetime.now().isoformat()
+            }
+            if data:
+                event.update(data)
+            await self.progress_callback(event)
     
     def build_full_path(self, relative_path: str, file_type: str) -> str:
         """Build full path by combining root path with relative path."""
@@ -126,13 +142,21 @@ class VerificationEngine:
         os.makedirs(project_output_dir, exist_ok=True)
         
         try:
+            # Emit progress: Starting verification
+            await self._emit_progress("verification_start", f"Starting verification: {section.name}", {
+                "verification_name": section.name
+            })
+            
             # Build the prompt
+            await self._emit_progress("prompt_building", f"Building prompt for: {section.name}")
             prompt = self.build_verification_prompt(section)
             
             # Get AI response
-            response = await self.ai_provider.generate_response(prompt)
+            await self._emit_progress("ai_processing", f"Processing with AI: {section.name}")
+            response = await self.ai_provider.generate_response_with_progress(prompt, section.name)
             
             # Save the report
+            await self._emit_progress("saving_report", f"Saving report for: {section.name}")
             report_filename = f"{section.name}_report.md"
             report_path = os.path.join(project_output_dir, report_filename)
             
@@ -163,6 +187,12 @@ class VerificationEngine:
                     await f.write(prompt)
                     await f.write("\n```\n")
             
+            # Emit completion event
+            await self._emit_progress("verification_complete", f"Completed verification: {section.name}", {
+                "verification_name": section.name,
+                "success": True
+            })
+            
             return VerificationResult(
                 verification_name=section.name,
                 success=True,
@@ -173,6 +203,13 @@ class VerificationEngine:
             )
             
         except Exception as e:
+            # Emit error event
+            await self._emit_progress("verification_error", f"Error in verification: {section.name}", {
+                "verification_name": section.name,
+                "error": str(e),
+                "success": False
+            })
+            
             return VerificationResult(
                 verification_name=section.name,
                 success=False,
@@ -213,3 +250,52 @@ class VerificationEngine:
                 processed_results.append(result)
         
         return processed_results
+    
+    async def run_all_verifications_with_progress(self, verification_names: Optional[List[str]] = None, progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None) -> List[VerificationResult]:
+        """Run verifications for specified sections or all sections with progress updates."""
+        # Update progress callback if provided
+        if progress_callback:
+            self.progress_callback = progress_callback
+        
+        sections_to_run = []
+        
+        if verification_names:
+            # Run specific verifications
+            for section in self.project_config.verification_sections:
+                if section.name in verification_names:
+                    sections_to_run.append(section)
+        else:
+            # Run all verifications
+            sections_to_run = self.project_config.verification_sections
+        
+        # Emit initial progress
+        await self._emit_progress("batch_start", f"Starting batch verification of {len(sections_to_run)} sections", {
+            "total_sections": len(sections_to_run),
+            "section_names": [s.name for s in sections_to_run]
+        })
+        
+        # Run verifications with progress tracking
+        results = []
+        for i, section in enumerate(sections_to_run):
+            # Emit progress for current section
+            await self._emit_progress("section_progress", f"Processing section {i+1}/{len(sections_to_run)}: {section.name}", {
+                "current_section": i + 1,
+                "total_sections": len(sections_to_run),
+                "section_name": section.name
+            })
+            
+            # Run the verification
+            result = await self.run_verification(section)
+            results.append(result)
+        
+        # Emit batch completion
+        successful = sum(1 for r in results if r.success)
+        failed = len(results) - successful
+        
+        await self._emit_progress("batch_complete", f"Batch verification completed: {successful} successful, {failed} failed", {
+            "total_sections": len(results),
+            "successful": successful,
+            "failed": failed
+        })
+        
+        return results

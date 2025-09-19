@@ -22,6 +22,10 @@ class BaseAIProvider(ABC):
     async def generate_response(self, prompt: str) -> str:
         """Generate a response from the AI provider."""
         pass
+    
+    async def generate_response_with_progress(self, prompt: str, verification_name: str) -> str:
+        """Generate a response with progress updates. Default implementation falls back to regular generation."""
+        return await self.generate_response(prompt)
 
 
 class OpenAIProvider(BaseAIProvider):
@@ -113,18 +117,111 @@ class LMStudioProvider(BaseAIProvider):
         )
     
     async def generate_response(self, prompt: str) -> str:
-        """Generate response using LM Studio (OpenAI compatible API)."""
+        """Generate response using LM Studio (OpenAI compatible API) with streaming support."""
         try:
-            response = await self.client.chat.completions.create(
-                model=self.config.model,
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant that verifies code against documentation."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=self.config.temperature,
-                max_tokens=self.config.max_tokens
-            )
-            return response.choices[0].message.content
+            # Try streaming first, fallback to non-streaming if not supported
+            try:
+                response_text = ""
+                stream = await self.client.chat.completions.create(
+                    model=self.config.model,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant that verifies code against documentation."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=self.config.temperature,
+                    max_tokens=self.config.max_tokens,
+                    stream=True  # Enable streaming
+                )
+                
+                async for chunk in stream:
+                    if chunk.choices[0].delta.content is not None:
+                        response_text += chunk.choices[0].delta.content
+                
+                return response_text
+                
+            except Exception as stream_error:
+                # Fallback to non-streaming if streaming fails
+                print(f"LM Studio streaming failed, falling back to non-streaming: {stream_error}")
+                response = await self.client.chat.completions.create(
+                    model=self.config.model,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant that verifies code against documentation."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=self.config.temperature,
+                    max_tokens=self.config.max_tokens,
+                    stream=False
+                )
+                return response.choices[0].message.content
+                
+        except Exception as e:
+            raise Exception(f"LM Studio API error: {str(e)}")
+    
+    async def generate_response_with_progress(self, prompt: str, verification_name: str) -> str:
+        """Generate response with streaming progress updates."""
+        try:
+            # Try streaming first, fallback to non-streaming if not supported
+            try:
+                response_text = ""
+                stream = await self.client.chat.completions.create(
+                    model=self.config.model,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant that verifies code against documentation."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=self.config.temperature,
+                    max_tokens=self.config.max_tokens,
+                    stream=True  # Enable streaming
+                )
+                
+                # Emit streaming start event
+                if hasattr(self, 'progress_callback') and self.progress_callback:
+                    await self.progress_callback({
+                        "type": "ai_streaming_start",
+                        "message": f"AI streaming started for: {verification_name}",
+                        "verification_name": verification_name
+                    })
+                
+                async for chunk in stream:
+                    if chunk.choices[0].delta.content is not None:
+                        content = chunk.choices[0].delta.content
+                        response_text += content
+                        
+                        # Emit streaming content event
+                        if hasattr(self, 'progress_callback') and self.progress_callback:
+                            await self.progress_callback({
+                                "type": "ai_streaming_content",
+                                "message": content,
+                                "verification_name": verification_name,
+                                "partial_response": response_text
+                            })
+                
+                # Emit streaming complete event
+                if hasattr(self, 'progress_callback') and self.progress_callback:
+                    await self.progress_callback({
+                        "type": "ai_streaming_complete",
+                        "message": f"AI streaming completed for: {verification_name}",
+                        "verification_name": verification_name,
+                        "total_length": len(response_text)
+                    })
+                
+                return response_text
+                
+            except Exception as stream_error:
+                # Fallback to non-streaming if streaming fails
+                print(f"LM Studio streaming failed, falling back to non-streaming: {stream_error}")
+                response = await self.client.chat.completions.create(
+                    model=self.config.model,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant that verifies code against documentation."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=self.config.temperature,
+                    max_tokens=self.config.max_tokens,
+                    stream=False
+                )
+                return response.choices[0].message.content
+                
         except Exception as e:
             raise Exception(f"LM Studio API error: {str(e)}")
 

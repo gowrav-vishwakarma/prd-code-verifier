@@ -9,7 +9,7 @@ from typing import List, Optional
 from pathlib import Path
 import aiofiles
 from fastapi import FastAPI, Request, Form, File, UploadFile, HTTPException
-from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
@@ -171,6 +171,117 @@ async def run_verification(request: VerificationRequest):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error running verification: {str(e)}")
+
+
+@app.post("/api/verification/run-stream")
+async def run_verification_stream(request: VerificationRequest):
+    """Run verification process with streaming progress updates."""
+    async def generate_progress():
+        progress_queue = asyncio.Queue()
+        
+        async def progress_callback(event):
+            await progress_queue.put(event)
+        
+        try:
+            # Create verification engine with progress callback
+            engine = VerificationEngine(request.project_config, request.ai_config, progress_callback)
+            
+            # Start verification process in background
+            verification_task = asyncio.create_task(
+                engine.run_all_verifications_with_progress(request.verification_names)
+            )
+            
+            # Send initial progress
+            yield f"data: {json.dumps({'type': 'start', 'message': 'Starting verification process...'})}\n\n"
+            
+            # Process progress events and verification
+            while True:
+                try:
+                    # Wait for either progress event or verification completion
+                    done, pending = await asyncio.wait(
+                        [asyncio.create_task(progress_queue.get()), verification_task],
+                        return_when=asyncio.FIRST_COMPLETED
+                    )
+                    
+                    # Check if verification is complete
+                    if verification_task in done:
+                        results = await verification_task
+                        
+                        # Calculate summary
+                        total = len(results)
+                        successful = sum(1 for r in results if r.success)
+                        failed = total - successful
+                        
+                        # Send final results
+                        final_response = VerificationResponse(
+                            results=results,
+                            total_verifications=total,
+                            successful_verifications=successful,
+                            failed_verifications=failed
+                        )
+                        
+                        yield f"data: {json.dumps({'type': 'complete', 'results': final_response.model_dump()})}\n\n"
+                        break
+                    
+                    # Process progress events
+                    for task in done:
+                        if task != verification_task:
+                            event = await task
+                            yield f"data: {json.dumps(event)}\n\n"
+                
+                except asyncio.TimeoutError:
+                    continue
+                    
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+    
+    return StreamingResponse(
+        generate_progress(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Cache-Control"
+        }
+    )
+
+
+@app.get("/api/ai/test-connection")
+async def test_ai_connection():
+    """Test AI provider connection and streaming capability."""
+    try:
+        # Get current AI config
+        ai_config = Config.get_default_ai_config()
+        engine = VerificationEngine(ProjectConfig(project_name="test", output_folder="test"), ai_config)
+        
+        # Test with a simple prompt
+        test_prompt = "Hello, please respond with 'Connection successful' if you can read this."
+        
+        try:
+            response = await engine.ai_provider.generate_response(test_prompt)
+            return {
+                "status": "success",
+                "provider": ai_config.provider.value,
+                "model": ai_config.model,
+                "base_url": ai_config.base_url,
+                "response": response[:100] + "..." if len(response) > 100 else response,
+                "streaming_supported": True  # Will be updated based on actual test
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "provider": ai_config.provider.value,
+                "model": ai_config.model,
+                "base_url": ai_config.base_url,
+                "error": str(e),
+                "streaming_supported": False
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": f"Configuration error: {str(e)}"
+        }
 
 
 @app.get("/api/reports/{project_name}/{filename}")

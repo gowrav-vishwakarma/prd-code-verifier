@@ -128,6 +128,43 @@ PORT=8000
 - Set `DEFAULT_AI_PROVIDER=lm_studio`
 - No API key required
 
+**LM Studio Streaming Setup:**
+
+1. **Start the Inference Server**:
+
+   - Open LM Studio
+   - Navigate to the "Server" tab
+   - Click "Start Server"
+   - Ensure the server is running on `http://localhost:1234`
+
+2. **Verify Model Compatibility**:
+
+   - Not all models support streaming
+   - Test with models known to support streaming (e.g., Mistral, Llama 2)
+   - Check model documentation for streaming support
+
+3. **System Requirements**:
+
+   - **macOS**: Apple Silicon (M1/M2/M3/M4), macOS 13.4+, 16GB+ RAM
+   - **Windows**: CPU with AVX2 support, 16GB+ RAM, GPU with 4GB+ VRAM
+   - **Linux**: Ubuntu 20.04+, x64 architecture, 16GB+ RAM
+
+4. **Troubleshooting Streaming Issues**:
+
+   - Ensure LM Studio is updated to the latest version
+   - Check that the inference server is running
+   - Verify the model supports streaming
+   - Check LM Studio logs for error messages
+   - Try different models if streaming fails
+   - The application will automatically fallback to non-streaming if streaming fails
+
+5. **Configuration**:
+   ```env
+   DEFAULT_AI_PROVIDER=lm_studio
+   LM_STUDIO_BASE_URL=http://localhost:1234/v1
+   LM_STUDIO_MODEL=your-model-name
+   ```
+
 ## 📖 Usage Guide
 
 ### 1. Creating a Project

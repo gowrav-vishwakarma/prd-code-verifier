@@ -162,6 +162,14 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <button type="button" class="btn btn-outline-info" onclick="testAIConnection()">
+                                            <i class="fas fa-plug"></i> Test AI Connection
+                                        </button>
+                                        <div id="connectionStatus" class="mt-2"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -226,6 +234,7 @@
                                     </div>
                                     <span class="ms-2">Running verification...</span>
                                 </div>
+                                <div id="progressContent" class="mt-3" style="display: none;"></div>
                             </div>
                         </div>
                     </div>
@@ -609,13 +618,16 @@
             await runVerifications(selectedNames);
         }
 
-        // Run verifications
+        // Run verifications with streaming progress
         async function runVerifications(verificationNames) {
             const loadingDiv = document.querySelector('.loading');
             const resultDiv = document.querySelector('.result-section');
+            const progressDiv = document.getElementById('progressContent');
             
             loadingDiv.style.display = 'block';
             resultDiv.style.display = 'none';
+            progressDiv.style.display = 'block';
+            progressDiv.innerHTML = '';
 
             try {
                 // Collect form data
@@ -677,7 +689,8 @@
                     verification_names: verificationNames
                 };
 
-                const response = await fetch('/api/verification/run', {
+                // Use streaming endpoint
+                const response = await fetch('/api/verification/run-stream', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -685,16 +698,210 @@
                     body: JSON.stringify(requestData)
                 });
 
-                if (response.ok) {
-                    const results = await response.json();
-                    displayResults(results);
-                } else {
-                    alert('Error running verification');
+                if (!response.ok) {
+                    throw new Error('Failed to start verification');
+                }
+
+                // Handle streaming response
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // Keep incomplete line in buffer
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                handleProgressEvent(data);
+                            } catch (e) {
+                                console.error('Error parsing progress event:', e);
+                            }
+                        }
+                    }
                 }
             } catch (error) {
                 alert('Error running verification: ' + error.message);
             } finally {
                 loadingDiv.style.display = 'none';
+            }
+        }
+
+        // Handle progress events from streaming
+        function handleProgressEvent(event) {
+            const progressDiv = document.getElementById('progressContent');
+            
+            switch (event.type) {
+                case 'start':
+                    progressDiv.innerHTML = `<div class="alert alert-info">${event.message}</div>`;
+                    break;
+                    
+                case 'batch_start':
+                    progressDiv.innerHTML = `
+                        <div class="alert alert-info">
+                            <h6>${event.message}</h6>
+                            <div class="progress mt-2">
+                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'section_progress':
+                    const progress = (event.current_section / event.total_sections) * 100;
+                    const progressBar = progressDiv.querySelector('.progress-bar');
+                    if (progressBar) {
+                        progressBar.style.width = `${progress}%`;
+                        progressBar.textContent = `${event.current_section}/${event.total_sections}`;
+                    }
+                    
+                    // Add current section info
+                    const currentSection = document.createElement('div');
+                    currentSection.className = 'mt-2';
+                    currentSection.innerHTML = `
+                        <small class="text-muted">
+                            <i class="fas fa-cog fa-spin"></i> ${event.message}
+                        </small>
+                    `;
+                    progressDiv.appendChild(currentSection);
+                    break;
+                    
+                case 'verification_start':
+                    addProgressItem(event.verification_name, 'Starting...', 'info');
+                    break;
+                    
+                case 'prompt_building':
+                    updateProgressItem(event.verification_name, 'Building prompt...', 'warning');
+                    break;
+                    
+                case 'ai_processing':
+                    updateProgressItem(event.verification_name, 'Processing with AI...', 'primary');
+                    break;
+                    
+                case 'ai_streaming_start':
+                    updateProgressItem(event.verification_name, 'AI streaming started...', 'primary');
+                    // Add streaming content area
+                    addStreamingContentArea(event.verification_name);
+                    break;
+                    
+                case 'ai_streaming_content':
+                    updateStreamingContent(event.verification_name, event.message, event.partial_response);
+                    break;
+                    
+                case 'ai_streaming_complete':
+                    updateProgressItem(event.verification_name, `AI streaming completed (${event.total_length} chars)`, 'success');
+                    break;
+                    
+                case 'saving_report':
+                    updateProgressItem(event.verification_name, 'Saving report...', 'info');
+                    break;
+                    
+                case 'verification_complete':
+                    updateProgressItem(event.verification_name, 'Completed successfully!', 'success');
+                    break;
+                    
+                case 'verification_error':
+                    updateProgressItem(event.verification_name, `Error: ${event.error}`, 'danger');
+                    break;
+                    
+                case 'batch_complete':
+                    progressDiv.innerHTML += `
+                        <div class="alert alert-success mt-2">
+                            <h6>${event.message}</h6>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'complete':
+                    displayResults(event.results);
+                    break;
+                    
+                case 'error':
+                    progressDiv.innerHTML += `
+                        <div class="alert alert-danger mt-2">
+                            <h6>Error: ${event.message}</h6>
+                        </div>
+                    `;
+                    break;
+            }
+        }
+
+        // Helper functions for progress display
+        function addProgressItem(name, status, type) {
+            const progressDiv = document.getElementById('progressContent');
+            const item = document.createElement('div');
+            item.id = `progress-${name}`;
+            item.className = `alert alert-${type} mt-1`;
+            item.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><strong>${name}:</strong> ${status}</span>
+                    <i class="fas fa-${getStatusIcon(type)}"></i>
+                </div>
+            `;
+            progressDiv.appendChild(item);
+        }
+
+        function updateProgressItem(name, status, type) {
+            const item = document.getElementById(`progress-${name}`);
+            if (item) {
+                item.className = `alert alert-${type} mt-1`;
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><strong>${name}:</strong> ${status}</span>
+                        <i class="fas fa-${getStatusIcon(type)}"></i>
+                    </div>
+                `;
+            }
+        }
+
+        function getStatusIcon(type) {
+            switch (type) {
+                case 'info': return 'info-circle';
+                case 'warning': return 'exclamation-triangle';
+                case 'primary': return 'cog fa-spin';
+                case 'success': return 'check-circle';
+                case 'danger': return 'times-circle';
+                default: return 'circle';
+            }
+        }
+
+        // Streaming content functions
+        function addStreamingContentArea(verificationName) {
+            const progressDiv = document.getElementById('progressContent');
+            const streamingArea = document.createElement('div');
+            streamingArea.id = `streaming-${verificationName}`;
+            streamingArea.className = 'mt-2';
+            streamingArea.innerHTML = `
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="fas fa-stream"></i> AI Response Stream - ${verificationName}</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="streaming-content" style="max-height: 300px; overflow-y: auto; background-color: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace; white-space: pre-wrap;">
+                            <span class="text-muted">Waiting for AI response...</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            progressDiv.appendChild(streamingArea);
+        }
+
+        function updateStreamingContent(verificationName, newContent, fullResponse) {
+            const streamingArea = document.getElementById(`streaming-${verificationName}`);
+            if (streamingArea) {
+                const contentDiv = streamingArea.querySelector('.streaming-content');
+                if (contentDiv) {
+                    // Update with the full response so far
+                    contentDiv.textContent = fullResponse;
+                    // Scroll to bottom
+                    contentDiv.scrollTop = contentDiv.scrollHeight;
+                }
             }
         }
 
@@ -777,6 +984,59 @@
                 }
             } catch (error) {
                 console.error('Error loading default AI config:', error);
+            }
+        }
+
+        // Test AI connection
+        async function testAIConnection() {
+            const statusDiv = document.getElementById('connectionStatus');
+            const button = event.target;
+            const originalText = button.innerHTML;
+            
+            // Show loading state
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+            button.disabled = true;
+            statusDiv.innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/ai/test-connection');
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> 
+                            <strong>Connection Successful!</strong><br>
+                            Provider: ${result.provider}<br>
+                            Model: ${result.model}<br>
+                            Base URL: ${result.base_url}<br>
+                            Response: ${result.response}
+                        </div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-times-circle"></i> 
+                            <strong>Connection Failed!</strong><br>
+                            Provider: ${result.provider || 'Unknown'}<br>
+                            Model: ${result.model || 'Unknown'}<br>
+                            Base URL: ${result.base_url || 'Unknown'}<br>
+                            Error: ${result.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times-circle"></i> 
+                        <strong>Test Failed!</strong><br>
+                        Error: ${error.message}
+                    </div>
+                `;
+            } finally {
+                // Restore button state
+                button.innerHTML = originalText;
+                button.disabled = false;
             }
         }
 
