@@ -63,6 +63,9 @@ async def get_default_ai_config():
 async def save_project(
     project_name: str = Form(...),
     output_folder: str = Form(...),
+    documentation_root_path: str = Form(""),
+    frontend_project_path: str = Form(""),
+    backend_project_path: str = Form(""),
     global_system_prompt: str = Form(""),
     global_instructions: str = Form(""),
     verification_data: str = Form(...)  # JSON string of verification sections
@@ -80,6 +83,9 @@ async def save_project(
         project_config = ProjectConfig(
             project_name=project_name,
             output_folder=output_folder,
+            documentation_root_path=documentation_root_path,
+            frontend_project_path=frontend_project_path,
+            backend_project_path=backend_project_path,
             global_system_prompt=global_system_prompt,
             global_instructions=global_instructions,
             verification_sections=verification_sections

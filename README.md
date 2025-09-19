@@ -11,7 +11,8 @@ A comprehensive web application that verifies code implementations against docum
 - **Flexible Verification**: Configure multiple verification sections with different documentation and code files
 - **Custom Prompts**: Override global system prompts and instructions per verification
 - **Report Generation**: Generate detailed markdown reports for each verification
-- **Project-Specific Organization**: Reports are organized in project-specific folders
+- **Hierarchical Organization**: Reports are organized in ProjectName/AIProvider/Model folder structure
+- **Multi-Provider Comparison**: Easy comparison of results across different AI providers and models
 - **Debug Mode**: Save complete prompts sent to AI when DEBUG is enabled
 
 ### Web Interface
@@ -155,22 +156,38 @@ PORT=8000
 
 ### 2. File Path Management
 
-The application uses textarea-based file path input:
+The application uses a **root path + relative path** system for maximum portability:
 
-1. **Enter absolute file paths** directly in the textareas
-2. **One file path per line** in each textarea
-3. **Click the help button (?) ** for guidance on getting file paths
-4. **Supported file types**:
+1. **Set root paths** in the project configuration:
+
+   - Documentation Root Path: Base directory for all documentation files
+   - Frontend Project Path: Base directory for all frontend code files
+   - Backend Project Path: Base directory for all backend code files
+
+2. **Enter relative file paths** in the verification sections:
+
+   - One file path per line in each textarea
+   - Paths are relative to their respective root directories
+   - Click "File Path Help" for guidance on getting relative paths
+
+3. **Supported file types**:
    - Documentation: `.md`, `.txt`, `.pdf`
    - Frontend: `.js`, `.jsx`, `.ts`, `.tsx`, `.vue`, `.html`, `.css`, `.scss`
    - Backend: `.py`, `.java`, `.cpp`, `.c`, `.cs`, `.go`, `.rs`, `.php`, `.rb`
 
-Example file paths:
+**Example setup:**
+
+- Documentation Root Path: `/home/user/project/docs`
+- Frontend Project Path: `/home/user/project/frontend`
+- Backend Project Path: `/home/user/project/backend`
+
+**Example relative paths:**
 
 ```
-/home/user/project/docs/README.md
-/home/user/project/src/components/Button.jsx
-/home/user/project/api/routes/users.py
+docs/README.md
+docs/api-spec.md
+src/components/Button.jsx
+api/routes/users.py
 ```
 
 ### 3. Running Verifications
@@ -205,16 +222,33 @@ Each verification generates:
 - **`{verification_name}_report.md`**: AI analysis of code vs documentation
 - **`{verification_name}_prompt.md`**: Complete prompt sent to AI (only when DEBUG=True)
 
-Reports are organized in project-specific folders:
+Reports are organized in a hierarchical folder structure for easy comparison:
 
 ```
 output/
 └── My Project/
-    ├── API Verification_report.md
-    ├── API Verification_prompt.md
-    ├── Database Schema_report.md
-    └── Database Schema_prompt.md
+    ├── openai/
+    │   └── gpt-3.5-turbo/
+    │       ├── API Verification_report.md
+    │       ├── API Verification_prompt.md
+    │       ├── Database Schema_report.md
+    │       └── Database Schema_prompt.md
+    ├── gemini/
+    │   └── gemini-pro/
+    │       ├── API Verification_report.md
+    │       └── API Verification_prompt.md
+    └── ollama/
+        └── llama2/
+            ├── API Verification_report.md
+            └── API Verification_prompt.md
 ```
+
+This structure allows you to:
+
+- **Compare results** across different AI providers
+- **Test different models** from the same provider
+- **Organize reports** by project, provider, and model
+- **Easily identify** which AI configuration generated each report
 
 ## 🏗️ Project Structure
 

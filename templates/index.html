@@ -83,7 +83,7 @@
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="mb-3">
                                             <label for="projectName" class="form-label">Project Name</label>
                                             <input type="text" class="form-control" id="projectName" required>
@@ -93,7 +93,21 @@
                                             <input type="text" class="form-control" id="outputFolder" placeholder="/path/to/output" required>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="documentationRootPath" class="form-label">Documentation Root Path</label>
+                                            <input type="text" class="form-control" id="documentationRootPath" placeholder="/path/to/docs" title="Root directory for all documentation files">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="frontendProjectPath" class="form-label">Frontend Project Path</label>
+                                            <input type="text" class="form-control" id="frontendProjectPath" placeholder="/path/to/frontend" title="Root directory for all frontend code files">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="backendProjectPath" class="form-label">Backend Project Path</label>
+                                            <input type="text" class="form-control" id="backendProjectPath" placeholder="/path/to/backend" title="Root directory for all backend code files">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
                                         <div class="mb-3">
                                             <label for="globalSystemPrompt" class="form-label">Global System Prompt</label>
                                             <textarea class="form-control" id="globalSystemPrompt" rows="3" placeholder="Enter global system prompt..."></textarea>
@@ -177,8 +191,8 @@
                             <div class="card-body">
                                 <div class="alert alert-info alert-dismissible fade show" role="alert">
                                     <i class="fas fa-info-circle"></i>
-                                    <strong>File Paths:</strong> Enter absolute file paths (one per line) in the textareas below. 
-                                    Click "File Path Help" above for guidance on getting file paths.
+                                    <strong>File Paths:</strong> Enter relative file paths (one per line) in the textareas below. 
+                                    These will be combined with the root paths set above. Click "File Path Help" for guidance.
                                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                                 </div>
                                 <div id="verificationSections">
@@ -264,18 +278,18 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Documentation Files (one per line)</label>
-                                <textarea class="form-control" name="documentationFiles" rows="3" placeholder="/absolute/path/to/doc1.md&#10;/absolute/path/to/doc2.md"></textarea>
-                                <small class="form-text text-muted">Enter absolute file paths, one per line.</small>
+                                <textarea class="form-control" name="documentationFiles" rows="3" placeholder="docs/README.md&#10;docs/api.md&#10;docs/architecture.md"></textarea>
+                                <small class="form-text text-muted">Enter relative file paths, one per line.</small>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Frontend Code Files (one per line)</label>
-                                <textarea class="form-control" name="frontendFiles" rows="3" placeholder="/absolute/path/to/frontend.js&#10;/absolute/path/to/component.jsx"></textarea>
-                                <small class="form-text text-muted">Enter absolute file paths, one per line.</small>
+                                <textarea class="form-control" name="frontendFiles" rows="3" placeholder="src/components/Button.jsx&#10;src/pages/Home.jsx&#10;src/utils/helpers.js"></textarea>
+                                <small class="form-text text-muted">Enter relative file paths, one per line.</small>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Backend Code Files (one per line)</label>
-                                <textarea class="form-control" name="backendFiles" rows="3" placeholder="/absolute/path/to/backend.py&#10;/absolute/path/to/api.js"></textarea>
-                                <small class="form-text text-muted">Enter absolute file paths, one per line.</small>
+                                <textarea class="form-control" name="backendFiles" rows="3" placeholder="api/routes/users.py&#10;api/models/User.py&#10;api/utils/database.py"></textarea>
+                                <small class="form-text text-muted">Enter relative file paths, one per line.</small>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -404,19 +418,22 @@
         // Show help for getting file paths
         function showPathHelp() {
             const helpMessage = `
-                <h6>How to get file paths:</h6>
+                <h6>How to get relative file paths:</h6>
                 <ol>
-                    <li><strong>Enter absolute file paths</strong> in the textarea, one per line</li>
-                    <li><strong>Common ways to get paths:</strong>
+                    <li><strong>Enter relative file paths</strong> in the textarea, one per line</li>
+                    <li><strong>Common ways to get relative paths:</strong>
                         <ul>
-                            <li>Right-click file in file manager → "Copy path"</li>
-                            <li>Drag file from file manager to terminal</li>
-                            <li>Use <code>pwd</code> command in terminal to get current directory</li>
-                            <li>Use <code>find</code> command to locate files</li>
+                            <li><strong>VS Code/Cursor:</strong> Right-click file → "Copy Relative Path"</li>
+                            <li><strong>File Explorer:</strong> Right-click file → "Copy as path" then remove root part</li>
+                            <li><strong>Terminal:</strong> Use <code>find . -name "filename"</code> from project root</li>
+                            <li><strong>Manual:</strong> Path relative to the root paths set above</li>
                         </ul>
                     </li>
                 </ol>
-                <p><strong>Example:</strong> <code>/home/user/project/README.md</code></p>
+                <p><strong>Examples:</strong><br>
+                Documentation: <code>docs/README.md</code><br>
+                Frontend: <code>src/components/Button.jsx</code><br>
+                Backend: <code>api/routes/users.py</code></p>
             `;
             
             showNotification(helpMessage, 'info');
@@ -456,6 +473,9 @@
         function populateForm(projectData) {
             document.getElementById('projectName').value = projectData.project_name || '';
             document.getElementById('outputFolder').value = projectData.output_folder || '';
+            document.getElementById('documentationRootPath').value = projectData.documentation_root_path || '';
+            document.getElementById('frontendProjectPath').value = projectData.frontend_project_path || '';
+            document.getElementById('backendProjectPath').value = projectData.backend_project_path || '';
             document.getElementById('globalSystemPrompt').value = projectData.global_system_prompt || '';
             document.getElementById('globalInstructions').value = projectData.global_instructions || '';
 
@@ -496,6 +516,9 @@
             const formData = new FormData();
             formData.append('project_name', document.getElementById('projectName').value);
             formData.append('output_folder', document.getElementById('outputFolder').value);
+            formData.append('documentation_root_path', document.getElementById('documentationRootPath').value);
+            formData.append('frontend_project_path', document.getElementById('frontendProjectPath').value);
+            formData.append('backend_project_path', document.getElementById('backendProjectPath').value);
             formData.append('global_system_prompt', document.getElementById('globalSystemPrompt').value);
             formData.append('global_instructions', document.getElementById('globalInstructions').value);
             
@@ -599,6 +622,9 @@
                 const projectData = {
                     project_name: document.getElementById('projectName').value,
                     output_folder: document.getElementById('outputFolder').value,
+                    documentation_root_path: document.getElementById('documentationRootPath').value,
+                    frontend_project_path: document.getElementById('frontendProjectPath').value,
+                    backend_project_path: document.getElementById('backendProjectPath').value,
                     global_system_prompt: document.getElementById('globalSystemPrompt').value,
                     global_instructions: document.getElementById('globalInstructions').value,
                     verification_sections: []

@@ -20,6 +20,25 @@ class VerificationEngine:
         self.ai_config = ai_config
         self.ai_provider = AIProviderFactory.create_provider(ai_config)
     
+    def build_full_path(self, relative_path: str, file_type: str) -> str:
+        """Build full path by combining root path with relative path."""
+        if not relative_path.strip():
+            return ""
+        
+        # Determine which root path to use based on file type
+        if file_type == "documentation" and self.project_config.documentation_root_path:
+            root_path = self.project_config.documentation_root_path
+        elif file_type == "frontend" and self.project_config.frontend_project_path:
+            root_path = self.project_config.frontend_project_path
+        elif file_type == "backend" and self.project_config.backend_project_path:
+            root_path = self.project_config.backend_project_path
+        else:
+            # If no root path is set, treat as absolute path
+            return relative_path
+        
+        # Combine root path with relative path
+        return os.path.join(root_path, relative_path)
+    
     async def read_file_content(self, file_path: str) -> str:
         """Read file content asynchronously."""
         try:
@@ -42,43 +61,46 @@ class VerificationEngine:
         if section.documentation_files:
             prompt_parts.append("DOCUMENTATION FILES:")
             for doc_file in section.documentation_files:
-                if os.path.exists(doc_file):
+                full_path = self.build_full_path(doc_file, "documentation")
+                if full_path and os.path.exists(full_path):
                     try:
-                        with open(doc_file, 'r', encoding='utf-8') as f:
+                        with open(full_path, 'r', encoding='utf-8') as f:
                             content = f.read()
                         prompt_parts.append(f"\n--- {doc_file} ---\n{content}\n")
                     except Exception as e:
                         prompt_parts.append(f"\n--- {doc_file} ---\n[Error reading file: {str(e)}]\n")
                 else:
-                    prompt_parts.append(f"\n--- {doc_file} ---\n[File not found]\n")
+                    prompt_parts.append(f"\n--- {doc_file} ---\n[File not found: {full_path}]\n")
         
         # Add frontend code
         if section.frontend_code_files:
             prompt_parts.append("\nFRONTEND CODE FILES:")
             for frontend_file in section.frontend_code_files:
-                if os.path.exists(frontend_file):
+                full_path = self.build_full_path(frontend_file, "frontend")
+                if full_path and os.path.exists(full_path):
                     try:
-                        with open(frontend_file, 'r', encoding='utf-8') as f:
+                        with open(full_path, 'r', encoding='utf-8') as f:
                             content = f.read()
                         prompt_parts.append(f"\n--- {frontend_file} ---\n{content}\n")
                     except Exception as e:
                         prompt_parts.append(f"\n--- {frontend_file} ---\n[Error reading file: {str(e)}]\n")
                 else:
-                    prompt_parts.append(f"\n--- {frontend_file} ---\n[File not found]\n")
+                    prompt_parts.append(f"\n--- {frontend_file} ---\n[File not found: {full_path}]\n")
         
         # Add backend code
         if section.backend_code_files:
             prompt_parts.append("\nBACKEND CODE FILES:")
             for backend_file in section.backend_code_files:
-                if os.path.exists(backend_file):
+                full_path = self.build_full_path(backend_file, "backend")
+                if full_path and os.path.exists(full_path):
                     try:
-                        with open(backend_file, 'r', encoding='utf-8') as f:
+                        with open(full_path, 'r', encoding='utf-8') as f:
                             content = f.read()
                         prompt_parts.append(f"\n--- {backend_file} ---\n{content}\n")
                     except Exception as e:
                         prompt_parts.append(f"\n--- {backend_file} ---\n[Error reading file: {str(e)}]\n")
                 else:
-                    prompt_parts.append(f"\n--- {backend_file} ---\n[File not found]\n")
+                    prompt_parts.append(f"\n--- {backend_file} ---\n[File not found: {full_path}]\n")
         
         # Add instructions (global or local)
         if section.override_global_instructions and section.verification_instructions:
@@ -90,6 +112,18 @@ class VerificationEngine:
     
     async def run_verification(self, section: VerificationSection) -> VerificationResult:
         """Run verification for a single section."""
+        # Create hierarchical output directory: ProjectName/AIProvider/Model
+        provider_name = self.ai_config.provider.value
+        model_name = self.ai_config.model.replace("/", "_").replace(":", "_")  # Sanitize model name for filesystem
+        
+        project_output_dir = os.path.join(
+            self.project_config.output_folder, 
+            self.project_config.project_name,
+            provider_name,
+            model_name
+        )
+        os.makedirs(project_output_dir, exist_ok=True)
+        
         try:
             # Build the prompt
             prompt = self.build_verification_prompt(section)
@@ -97,17 +131,16 @@ class VerificationEngine:
             # Get AI response
             response = await self.ai_provider.generate_response(prompt)
             
-            # Create project-specific output directory
-            project_output_dir = os.path.join(self.project_config.output_folder, self.project_config.project_name)
-            os.makedirs(project_output_dir, exist_ok=True)
-            
             # Save the report
             report_filename = f"{section.name}_report.md"
             report_path = os.path.join(project_output_dir, report_filename)
             
-            # Write the report
+            # Write the report with enhanced metadata
             async with aiofiles.open(report_path, 'w', encoding='utf-8') as f:
                 await f.write(f"# Verification Report: {section.name}\n\n")
+                await f.write(f"**Project:** {self.project_config.project_name}\n")
+                await f.write(f"**AI Provider:** {provider_name}\n")
+                await f.write(f"**Model:** {self.ai_config.model}\n")
                 await f.write(f"**Generated on:** {asyncio.get_event_loop().time()}\n\n")
                 await f.write("## AI Analysis\n\n")
                 await f.write(response)
@@ -120,6 +153,9 @@ class VerificationEngine:
                 
                 async with aiofiles.open(prompt_path, 'w', encoding='utf-8') as f:
                     await f.write(f"# Verification Prompt: {section.name}\n\n")
+                    await f.write(f"**Project:** {self.project_config.project_name}\n")
+                    await f.write(f"**AI Provider:** {provider_name}\n")
+                    await f.write(f"**Model:** {self.ai_config.model}\n")
                     await f.write(f"**Generated on:** {asyncio.get_event_loop().time()}\n\n")
                     await f.write("## Complete Prompt Sent to AI\n\n")
                     await f.write("```\n")
@@ -130,14 +166,18 @@ class VerificationEngine:
                 verification_name=section.name,
                 success=True,
                 report_content=response,
-                report_file_path=report_path
+                report_file_path=report_path,
+                ai_provider=provider_name,
+                ai_model=self.ai_config.model
             )
             
         except Exception as e:
             return VerificationResult(
                 verification_name=section.name,
                 success=False,
-                error_message=str(e)
+                error_message=str(e),
+                ai_provider=self.ai_config.provider.value,
+                ai_model=self.ai_config.model
             )
     
     async def run_all_verifications(self, verification_names: Optional[List[str]] = None) -> List[VerificationResult]:
@@ -164,7 +204,9 @@ class VerificationEngine:
                 processed_results.append(VerificationResult(
                     verification_name=sections_to_run[i].name,
                     success=False,
-                    error_message=str(result)
+                    error_message=str(result),
+                    ai_provider=self.ai_config.provider.value,
+                    ai_model=self.ai_config.model
                 ))
             else:
                 processed_results.append(result)

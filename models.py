@@ -31,6 +31,9 @@ class ProjectConfig(BaseModel):
     """Project configuration model."""
     project_name: str = Field(..., description="Name of the project")
     output_folder: str = Field(..., description="Output folder path for reports")
+    documentation_root_path: str = Field(default="", description="Root path for documentation files")
+    frontend_project_path: str = Field(default="", description="Root path for frontend code files")
+    backend_project_path: str = Field(default="", description="Root path for backend code files")
     global_system_prompt: str = Field(default="", description="Global system prompt for all verifications")
     global_instructions: str = Field(default="", description="Global instructions for all verifications")
     verification_sections: List[VerificationSection] = Field(default_factory=list, description="List of verification sections")
@@ -60,6 +63,8 @@ class VerificationResult(BaseModel):
     report_content: Optional[str] = None
     error_message: Optional[str] = None
     report_file_path: Optional[str] = None
+    ai_provider: Optional[str] = None
+    ai_model: Optional[str] = None
 
 
 class VerificationResponse(BaseModel):
