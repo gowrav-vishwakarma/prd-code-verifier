@@ -177,22 +177,17 @@ class VerificationEngine:
     
     async def run_verification(self, section: VerificationSection) -> VerificationResult:
         """Run verification for a single section."""
-        # Create hierarchical output directory: ProjectName/AIProvider/Model/Tag (if tag provided)
+        # Create hierarchical output directory: ProjectName/VerificationName/Provider_Model_Tag
         provider_name = self.ai_config.provider.value
         model_name = self.ai_config.model.replace("/", "_").replace(":", "_")  # Sanitize model name for filesystem
         tag = self.ai_config.tag.strip() if self.ai_config.tag else None
         
-        # Build path components
+        # Build path components - new structure: output_folder/project_name/verification_name/
         path_components = [
             self.project_config.output_folder, 
             self.project_config.project_name,
-            provider_name,
-            model_name
+            section.name  # verification name as folder
         ]
-        
-        # Add tag to path if provided and not empty
-        if tag:
-            path_components.append(tag)
         
         project_output_dir = os.path.join(*path_components)
         os.makedirs(project_output_dir, exist_ok=True)
@@ -213,7 +208,12 @@ class VerificationEngine:
             
             # Save the report
             await self._emit_progress("saving_report", f"Saving report for: {section.name}")
-            report_filename = f"{section.name}_report.md"
+            # Create filename with provider, model, and tag: provider_model_tag_report.md
+            filename_parts = [provider_name, model_name]
+            if tag:
+                filename_parts.append(tag)
+            filename_parts.append("report")
+            report_filename = "_".join(filename_parts) + ".md"
             report_path = os.path.join(project_output_dir, report_filename)
             
             # Write the report with enhanced metadata
@@ -229,7 +229,12 @@ class VerificationEngine:
             # Save the prompt if DEBUG is enabled
             prompt_path = None
             if Config.DEBUG:
-                prompt_filename = f"{section.name}_prompt.md"
+                # Create prompt filename with provider, model, and tag: provider_model_tag_prompt.md
+                prompt_filename_parts = [provider_name, model_name]
+                if tag:
+                    prompt_filename_parts.append(tag)
+                prompt_filename_parts.append("prompt")
+                prompt_filename = "_".join(prompt_filename_parts) + ".md"
                 prompt_path = os.path.join(project_output_dir, prompt_filename)
                 
                 async with aiofiles.open(prompt_path, 'w', encoding='utf-8') as f:

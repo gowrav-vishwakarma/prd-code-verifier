@@ -1429,7 +1429,7 @@
                                     </div>` : ''
                                 }
                                 ${result.success && result.report_file_path ? 
-                                    `<a href="/api/reports/${projectName}/${result.ai_provider || 'unknown'}/${result.ai_model || 'unknown'}/${result.ai_tag ? result.ai_tag + '/' : ''}${result.report_file_path.split('/').pop()}" class="btn btn-sm btn-outline-primary" download>
+                                    `<a href="/api/reports/${projectName}/${result.verification_name}/${result.report_file_path.split('/').pop()}" class="btn btn-sm btn-outline-primary" download>
                                         <i class="fas fa-download"></i> Download Report
                                     </a>` : ''
                                 }
@@ -1575,7 +1575,22 @@
             statusDiv.innerHTML = '';
             
             try {
-                const response = await fetch('/api/ai/test-connection');
+                // Get current form values
+                const aiConfig = {
+                    provider: document.getElementById('aiProvider').value,
+                    model: document.getElementById('aiModel').value,
+                    base_url: document.getElementById('aiBaseUrl').value || null,
+                    api_key: document.getElementById('aiApiKey').value || null,
+                    tag: document.getElementById('aiTag').value || null
+                };
+                
+                const response = await fetch('/api/ai/test-connection', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(aiConfig)
+                });
                 const result = await response.json();
                 
                 if (result.status === 'success') {

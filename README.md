@@ -339,33 +339,31 @@ Reports are organized in a hierarchical folder structure for easy comparison:
 ```
 output/
 └── My Project/
-    ├── openai/
-    │   └── gpt-3.5-turbo/
-    │       ├── API Verification_report.md
-    │       ├── API Verification_prompt.md
-    │       ├── Database Schema_report.md
-    │       └── Database Schema_prompt.md
-    ├── gemini/
-    │   └── gemini-pro/
-    │       ├── API Verification_report.md
-    │       └── API Verification_prompt.md
-    └── ollama/
-        └── llama2/
-            ├── API Verification_report.md
-            └── API Verification_prompt.md
+    ├── API Verification/
+    │   ├── openai_gpt-3.5-turbo_report.md
+    │   ├── openai_gpt-3.5-turbo_prompt.md
+    │   ├── gemini_gemini-pro_report.md
+    │   ├── gemini_gemini-pro_prompt.md
+    │   ├── ollama_llama2_report.md
+    │   └── ollama_llama2_prompt.md
+    └── Database Schema/
+        ├── openai_gpt-3.5-turbo_report.md
+        ├── openai_gpt-3.5-turbo_prompt.md
+        ├── gemini_gemini-pro_report.md
+        └── gemini_gemini-pro_prompt.md
 ```
 
 This structure allows you to:
 
-- **Compare results** across different AI providers
-- **Test different models** from the same provider
-- **Organize reports** by project, provider, and model
-- **Easily identify** which AI configuration generated each report
+- **Compare results** across different AI providers and models for each verification
+- **Easily find all reports** for a specific verification in one folder
+- **Organize reports** by project and verification name
+- **Quickly identify** which AI configuration generated each report from the filename
 
 **Download URLs:**
 
-- Reports are downloaded using the hierarchical path: `/api/reports/{project_name}/{provider_name}/{model_name}/{filename}`
-- The system automatically constructs the correct download URL based on the AI provider and model used
+- Reports are downloaded using the new path: `/api/reports/{project_name}/{verification_name}/{filename}`
+- The filename includes provider, model, and tag information: `{provider}_{model}_{tag}_report.md`
 - Legacy download URLs are still supported for backward compatibility
 
 ## 🏗️ Project Structure
@@ -409,7 +407,7 @@ prd-code-verifier/
 ### Verification
 
 - `POST /api/verification/run` - Run verification process
-- `GET /api/reports/{project_name}/{provider_name}/{model_name}/{filename}` - Download verification report (hierarchical path)
+- `GET /api/reports/{project_name}/{verification_name}/{filename}` - Download verification report (new structure)
 - `GET /api/reports/{project_name}/{filename}` - Download verification report (legacy endpoint for backward compatibility)
 
 ## 🔧 Development
