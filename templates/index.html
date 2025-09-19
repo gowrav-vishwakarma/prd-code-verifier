@@ -303,24 +303,40 @@
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="overrideSystemPrompt">
-                                    <label class="form-check-label">Override Global System Prompt</label>
+                                <label class="form-label">System Prompt Mode</label>
+                                <div class="btn-group" role="group" data-toggle="buttons">
+                                    <input type="radio" class="btn-check" name="systemPromptMode-${verificationSectionCount}" id="useGlobalSystem-${verificationSectionCount}" value="use_global" checked>
+                                    <label class="btn btn-outline-primary btn-sm" for="useGlobalSystem-${verificationSectionCount}">Use Global</label>
+                                    
+                                    <input type="radio" class="btn-check" name="systemPromptMode-${verificationSectionCount}" id="overrideSystem-${verificationSectionCount}" value="override">
+                                    <label class="btn btn-outline-warning btn-sm" for="overrideSystem-${verificationSectionCount}">Override</label>
+                                    
+                                    <input type="radio" class="btn-check" name="systemPromptMode-${verificationSectionCount}" id="appendSystem-${verificationSectionCount}" value="append">
+                                    <label class="btn btn-outline-info btn-sm" for="appendSystem-${verificationSectionCount}">Append</label>
                                 </div>
+                                <div><small class="form-text text-muted">Use Global: Use only global system prompt<br>Override: Use only local system prompt<br>Append: Combine global + local prompts</small></div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Verification System Prompt</label>
-                                <textarea class="form-control" name="verificationSystemPrompt" rows="2"></textarea>
+                                <textarea class="form-control" name="verificationSystemPrompt" rows="2" placeholder="Enter local system prompt for this verification"></textarea>
                             </div>
                             <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="overrideInstructions">
-                                    <label class="form-check-label">Override Global Instructions</label>
+                                <label class="form-label">Instructions Mode</label>
+                                <div class="btn-group" role="group" data-toggle="buttons">
+                                    <input type="radio" class="btn-check" name="instructionsMode-${verificationSectionCount}" id="useGlobalInstructions-${verificationSectionCount}" value="use_global" checked>
+                                    <label class="btn btn-outline-primary btn-sm" for="useGlobalInstructions-${verificationSectionCount}">Use Global</label>
+                                    
+                                    <input type="radio" class="btn-check" name="instructionsMode-${verificationSectionCount}" id="overrideInstructions-${verificationSectionCount}" value="override">
+                                    <label class="btn btn-outline-warning btn-sm" for="overrideInstructions-${verificationSectionCount}">Override</label>
+                                    
+                                    <input type="radio" class="btn-check" name="instructionsMode-${verificationSectionCount}" id="appendInstructions-${verificationSectionCount}" value="append">
+                                    <label class="btn btn-outline-info btn-sm" for="appendInstructions-${verificationSectionCount}">Append</label>
                                 </div>
+                                <div><small class="form-text text-muted">Use Global: Use only global instructions<br>Override: Use only local instructions<br>Append: Combine global + local instructions</small></div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Verification Instructions</label>
-                                <textarea class="form-control" name="verificationInstructions" rows="2"></textarea>
+                                <textarea class="form-control" name="verificationInstructions" rows="2" placeholder="Enter local instructions for this verification"></textarea>
                             </div>
                         </div>
                     </div>
@@ -502,8 +518,15 @@
                         lastSection.querySelector('input[name="verificationName"]').value = section.name || '';
                         lastSection.querySelector('textarea[name="verificationSystemPrompt"]').value = section.verification_system_prompt || '';
                         lastSection.querySelector('textarea[name="verificationInstructions"]').value = section.verification_instructions || '';
-                        lastSection.querySelector('input[name="overrideSystemPrompt"]').checked = section.override_global_system_prompt || false;
-                        lastSection.querySelector('input[name="overrideInstructions"]').checked = section.override_global_instructions || false;
+                        // Handle system prompt mode
+                        const systemPromptMode = section.system_prompt_mode || (section.override_global_system_prompt ? 'override' : 'use_global');
+                        const systemPromptRadio = lastSection.querySelector(`input[name="systemPromptMode-${verificationSectionCount - 1}"][value="${systemPromptMode}"]`);
+                        if (systemPromptRadio) systemPromptRadio.checked = true;
+                        
+                        // Handle instructions mode
+                        const instructionsMode = section.instructions_mode || (section.override_global_instructions ? 'override' : 'use_global');
+                        const instructionsRadio = lastSection.querySelector(`input[name="instructionsMode-${verificationSectionCount - 1}"][value="${instructionsMode}"]`);
+                        if (instructionsRadio) instructionsRadio.checked = true;
                         
                         // Populate file paths
                         lastSection.querySelector('textarea[name="documentationFiles"]').value = (section.documentation_files || []).join('\n');
@@ -551,13 +574,17 @@
                     .map(path => path.trim())
                     .filter(path => path.length > 0);
                 
+                // Get selected radio button values
+                const systemPromptMode = section.querySelector('input[name^="systemPromptMode-"]:checked')?.value || 'use_global';
+                const instructionsMode = section.querySelector('input[name^="instructionsMode-"]:checked')?.value || 'use_global';
+                
                 const sectionData = {
                     name: section.querySelector('input[name="verificationName"]').value,
                     documentation_files: docFiles,
                     frontend_code_files: frontendFiles,
                     backend_code_files: backendFiles,
-                    override_global_system_prompt: section.querySelector('input[name="overrideSystemPrompt"]').checked,
-                    override_global_instructions: section.querySelector('input[name="overrideInstructions"]').checked,
+                    system_prompt_mode: systemPromptMode,
+                    instructions_mode: instructionsMode,
                     verification_system_prompt: section.querySelector('textarea[name="verificationSystemPrompt"]').value,
                     verification_instructions: section.querySelector('textarea[name="verificationInstructions"]').value
                 };
@@ -661,13 +688,17 @@
                         .map(path => path.trim())
                         .filter(path => path.length > 0);
                     
+                    // Get selected radio button values
+                    const systemPromptMode = section.querySelector('input[name^="systemPromptMode-"]:checked')?.value || 'use_global';
+                    const instructionsMode = section.querySelector('input[name^="instructionsMode-"]:checked')?.value || 'use_global';
+                    
                     const sectionData = {
                         name: section.querySelector('input[name="verificationName"]').value,
                         documentation_files: docFiles,
                         frontend_code_files: frontendFiles,
                         backend_code_files: backendFiles,
-                        override_global_system_prompt: section.querySelector('input[name="overrideSystemPrompt"]').checked,
-                        override_global_instructions: section.querySelector('input[name="overrideInstructions"]').checked,
+                        system_prompt_mode: systemPromptMode,
+                        instructions_mode: instructionsMode,
                         verification_system_prompt: section.querySelector('textarea[name="verificationSystemPrompt"]').value,
                         verification_instructions: section.querySelector('textarea[name="verificationInstructions"]').value
                     };

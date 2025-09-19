@@ -9,7 +9,7 @@ A comprehensive web application that verifies code implementations against docum
 - **Project Management**: Create, save, and load verification projects as JSON files
 - **Multi-AI Provider Support**: Works with OpenAI, Google Gemini, Ollama, and LM Studio
 - **Flexible Verification**: Configure multiple verification sections with different documentation and code files
-- **Custom Prompts**: Override global system prompts and instructions per verification
+- **Flexible Prompt Management**: Choose to use global, override, or append prompts and instructions per verification
 - **Report Generation**: Generate detailed markdown reports for each verification
 - **Hierarchical Organization**: Reports are organized in ProjectName/AIProvider/Model folder structure
 - **Multi-Provider Comparison**: Easy comparison of results across different AI providers and models
@@ -227,7 +227,36 @@ src/components/Button.jsx
 api/routes/users.py
 ```
 
-### 3. Running Verifications
+### 3. Prompt Management
+
+The application provides flexible prompt management with three modes for both system prompts and instructions:
+
+#### **System Prompt Modes:**
+
+- **Use Global**: Uses only the global system prompt (default)
+- **Override**: Uses only the local verification system prompt
+- **Append**: Combines global + local system prompts (global first, then local)
+
+#### **Instructions Modes:**
+
+- **Use Global**: Uses only the global instructions (default)
+- **Override**: Uses only the local verification instructions
+- **Append**: Combines global + local instructions (global first, then local)
+
+#### **How It Works:**
+
+1. **Global Prompts**: Set once in the project configuration
+2. **Local Prompts**: Set per verification section
+3. **Mode Selection**: Choose how to combine them using radio buttons
+4. **Smart Combination**: When appending, prompts are separated by double newlines for clarity
+
+#### **Example Scenarios:**
+
+- **Use Global**: Standard verification using project-wide prompts
+- **Override**: Special verification requiring completely different prompts
+- **Append**: Add verification-specific context to global prompts
+
+### 4. Running Verifications
 
 1. **Save your project** first (optional but recommended)
 2. **Select verifications to run**:
@@ -241,7 +270,7 @@ api/routes/users.py
 4. **Monitor progress** with the loading indicator
 5. **Download reports** from the results section
 
-### 4. Verification Selection Features
+### 5. Verification Selection Features
 
 The application provides flexible verification selection:
 
@@ -252,7 +281,7 @@ The application provides flexible verification selection:
 - **Validation**: System prevents running without selecting any verifications
 - **Error Handling**: Clear notifications for selection issues
 
-### 5. Understanding Reports
+### 6. Understanding Reports
 
 Each verification generates:
 

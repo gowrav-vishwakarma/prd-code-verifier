@@ -15,16 +15,27 @@ class AIProvider(str, Enum):
     LM_STUDIO = "lm_studio"
 
 
+class OverrideMode(str, Enum):
+    """Override mode for prompts and instructions."""
+    USE_GLOBAL = "use_global"
+    OVERRIDE = "override"
+    APPEND = "append"
+
+
 class VerificationSection(BaseModel):
     """Individual verification section configuration."""
     name: str = Field(..., description="Name of the verification")
     documentation_files: List[str] = Field(default_factory=list, description="List of documentation file paths")
     frontend_code_files: List[str] = Field(default_factory=list, description="List of frontend code file paths")
     backend_code_files: List[str] = Field(default_factory=list, description="List of backend code file paths")
-    override_global_system_prompt: bool = Field(default=False, description="Override global system prompt")
-    override_global_instructions: bool = Field(default=False, description="Override global instructions")
+    system_prompt_mode: OverrideMode = Field(default=OverrideMode.USE_GLOBAL, description="How to handle system prompt (use_global, override, append)")
+    instructions_mode: OverrideMode = Field(default=OverrideMode.USE_GLOBAL, description="How to handle instructions (use_global, override, append)")
     verification_system_prompt: Optional[str] = Field(None, description="Local system prompt for this verification")
     verification_instructions: Optional[str] = Field(None, description="Local instructions for this verification")
+    
+    # Legacy fields for backward compatibility
+    override_global_system_prompt: Optional[bool] = Field(None, description="Legacy: Override global system prompt (deprecated)")
+    override_global_instructions: Optional[bool] = Field(None, description="Legacy: Override global instructions (deprecated)")
 
 
 class ProjectConfig(BaseModel):

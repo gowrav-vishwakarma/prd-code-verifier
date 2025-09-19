@@ -8,7 +8,7 @@ from typing import List, Optional, Callable, Dict, Any
 from pathlib import Path
 import aiofiles
 from datetime import datetime
-from models import ProjectConfig, VerificationSection, AIProviderConfig, VerificationResult
+from models import ProjectConfig, VerificationSection, AIProviderConfig, VerificationResult, OverrideMode
 from ai_providers import AIProviderFactory
 from config import Config
 
@@ -68,11 +68,10 @@ class VerificationEngine:
         """Build the complete prompt for a verification section."""
         prompt_parts = []
         
-        # Add system prompt (global or local)
-        if section.override_global_system_prompt and section.verification_system_prompt:
-            prompt_parts.append(f"SYSTEM PROMPT:\n{section.verification_system_prompt}\n")
-        elif self.project_config.global_system_prompt:
-            prompt_parts.append(f"SYSTEM PROMPT:\n{self.project_config.global_system_prompt}\n")
+        # Handle system prompt based on mode
+        system_prompt = self._build_system_prompt(section)
+        if system_prompt:
+            prompt_parts.append(f"SYSTEM PROMPT:\n{system_prompt}\n")
         
         # Add documentation content
         if section.documentation_files:
@@ -119,13 +118,62 @@ class VerificationEngine:
                 else:
                     prompt_parts.append(f"\n--- {backend_file} ---\n[File not found: {full_path}]\n")
         
-        # Add instructions (global or local)
-        if section.override_global_instructions and section.verification_instructions:
-            prompt_parts.append(f"\nINSTRUCTIONS:\n{section.verification_instructions}")
-        elif self.project_config.global_instructions:
-            prompt_parts.append(f"\nINSTRUCTIONS:\n{self.project_config.global_instructions}")
+        # Handle instructions based on mode
+        instructions = self._build_instructions(section)
+        if instructions:
+            prompt_parts.append(f"\nINSTRUCTIONS:\n{instructions}")
         
         return "\n".join(prompt_parts)
+    
+    def _build_system_prompt(self, section: VerificationSection) -> str:
+        """Build system prompt based on the override mode."""
+        # Handle legacy boolean fields for backward compatibility
+        if section.override_global_system_prompt is not None:
+            # Legacy mode - convert to new enum
+            if section.override_global_system_prompt:
+                section.system_prompt_mode = OverrideMode.OVERRIDE
+            else:
+                section.system_prompt_mode = OverrideMode.USE_GLOBAL
+        
+        if section.system_prompt_mode == OverrideMode.USE_GLOBAL:
+            return self.project_config.global_system_prompt
+        elif section.system_prompt_mode == OverrideMode.OVERRIDE:
+            return section.verification_system_prompt or ""
+        elif section.system_prompt_mode == OverrideMode.APPEND:
+            global_prompt = self.project_config.global_system_prompt
+            local_prompt = section.verification_system_prompt or ""
+            if global_prompt and local_prompt:
+                return f"{global_prompt}\n\n{local_prompt}"
+            elif global_prompt:
+                return global_prompt
+            else:
+                return local_prompt
+        return ""
+    
+    def _build_instructions(self, section: VerificationSection) -> str:
+        """Build instructions based on the override mode."""
+        # Handle legacy boolean fields for backward compatibility
+        if section.override_global_instructions is not None:
+            # Legacy mode - convert to new enum
+            if section.override_global_instructions:
+                section.instructions_mode = OverrideMode.OVERRIDE
+            else:
+                section.instructions_mode = OverrideMode.USE_GLOBAL
+        
+        if section.instructions_mode == OverrideMode.USE_GLOBAL:
+            return self.project_config.global_instructions
+        elif section.instructions_mode == OverrideMode.OVERRIDE:
+            return section.verification_instructions or ""
+        elif section.instructions_mode == OverrideMode.APPEND:
+            global_instructions = self.project_config.global_instructions
+            local_instructions = section.verification_instructions or ""
+            if global_instructions and local_instructions:
+                return f"{global_instructions}\n\n{local_instructions}"
+            elif global_instructions:
+                return global_instructions
+            else:
+                return local_instructions
+        return ""
     
     async def run_verification(self, section: VerificationSection) -> VerificationResult:
         """Run verification for a single section."""
