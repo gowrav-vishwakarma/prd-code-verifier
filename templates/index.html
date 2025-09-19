@@ -123,6 +123,99 @@
             border-top: 1px solid #dee2e6;
             margin: 1.5rem 0;
         }
+        
+        /* Report content styling (for results section) */
+        .report-content-preview h1,
+        .report-content-preview h2,
+        .report-content-preview h3,
+        .report-content-preview h4,
+        .report-content-preview h5,
+        .report-content-preview h6 {
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .report-content-preview h1 {
+            font-size: 1.5rem;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 0.3rem;
+        }
+        
+        .report-content-preview h2 {
+            font-size: 1.3rem;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 0.2rem;
+        }
+        
+        .report-content-preview p {
+            margin-bottom: 0.8rem;
+            line-height: 1.5;
+        }
+        
+        .report-content-preview code {
+            background-color: #f8f9fa;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            color: #e83e8c;
+        }
+        
+        .report-content-preview pre {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+        
+        .report-content-preview pre code {
+            background-color: transparent;
+            padding: 0;
+            color: #212529;
+        }
+        
+        .report-content-preview ul,
+        .report-content-preview ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+        
+        .report-content-preview li {
+            margin-bottom: 0.25rem;
+        }
+        
+        .report-content-preview blockquote {
+            border-left: 4px solid #007bff;
+            padding-left: 1rem;
+            margin: 1rem 0;
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        .report-content-preview table {
+            width: 100%;
+            margin-bottom: 1rem;
+            border-collapse: collapse;
+        }
+        
+        .report-content-preview th,
+        .report-content-preview td {
+            padding: 0.5rem;
+            border: 1px solid #dee2e6;
+            text-align: left;
+        }
+        
+        .report-content-preview th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .report-content-preview hr {
+            border: none;
+            border-top: 1px solid #dee2e6;
+            margin: 1.5rem 0;
+        }
     </style>
 </head>
 <body>
@@ -1298,6 +1391,7 @@
             results.results.forEach(result => {
                 const statusClass = result.success ? 'success' : 'danger';
                 const statusIcon = result.success ? 'check-circle' : 'times-circle';
+                const sanitizedName = sanitizeId(result.verification_name);
                 
                 html += `
                     <div class="card mb-3">
@@ -1306,16 +1400,41 @@
                                 <i class="fas fa-${statusIcon} text-${statusClass}"></i>
                                 ${result.verification_name}
                             </h6>
-                            ${result.success && result.report_file_path ? 
-                                `<a href="/api/reports/${projectName}/${result.ai_provider || 'unknown'}/${result.ai_model || 'unknown'}/${result.report_file_path.split('/').pop()}" class="btn btn-sm btn-outline-primary" download>
-                                    <i class="fas fa-download"></i> Download Report
-                                </a>` : ''
-                            }
+                            <div class="d-flex gap-2">
+                                ${result.success && result.report_content ? 
+                                    `<div class="btn-group btn-group-sm" role="group">
+                                        <input type="radio" class="btn-check" name="viewMode-${sanitizedName}" id="raw-${sanitizedName}" value="raw" checked>
+                                        <label class="btn btn-outline-secondary" for="raw-${sanitizedName}" data-verification="${sanitizedName}" data-mode="raw">
+                                            <i class="fas fa-code"></i> Raw
+                                        </label>
+                                        
+                                        <input type="radio" class="btn-check" name="viewMode-${sanitizedName}" id="preview-${sanitizedName}" value="preview">
+                                        <label class="btn btn-outline-primary" for="preview-${sanitizedName}" data-verification="${sanitizedName}" data-mode="preview">
+                                            <i class="fas fa-eye"></i> Preview
+                                        </label>
+                                    </div>` : ''
+                                }
+                                ${result.success && result.report_file_path ? 
+                                    `<a href="/api/reports/${projectName}/${result.ai_provider || 'unknown'}/${result.ai_model || 'unknown'}/${result.report_file_path.split('/').pop()}" class="btn btn-sm btn-outline-primary" download>
+                                        <i class="fas fa-download"></i> Download Report
+                                    </a>` : ''
+                                }
+                            </div>
                         </div>
                         <div class="card-body">
                             ${result.success ? 
                                 `<p class="text-success">Verification completed successfully!</p>` :
                                 `<p class="text-danger">Error: ${result.error_message}</p>`
+                            }
+                            ${result.success && result.report_content ? 
+                                `<div class="mt-3">
+                                    <div class="report-content-raw" id="report-raw-${sanitizedName}" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; display: block;">
+                                        ${result.report_content}
+                                    </div>
+                                    <div class="report-content-preview" id="report-preview-${sanitizedName}" style="max-height: 400px; overflow-y: auto; background-color: #ffffff; padding: 15px; border-radius: 5px; border: 1px solid #dee2e6; display: none;">
+                                        <span class="text-muted">Loading preview...</span>
+                                    </div>
+                                </div>` : ''
                             }
                         </div>
                     </div>
@@ -1324,6 +1443,77 @@
 
             contentDiv.innerHTML = html;
             resultDiv.style.display = 'block';
+            
+            // Add event listeners for the new raw/preview toggles in results
+            addResultsToggleEventListeners();
+        }
+        
+        // Add event listeners for results section raw/preview toggles
+        function addResultsToggleEventListeners() {
+            // Use event delegation for dynamically added elements
+            document.addEventListener('change', function(event) {
+                if (event.target.matches('input[name^="viewMode-"]')) {
+                    const sanitizedName = event.target.id.replace(/^(raw-|preview-)/, '');
+                    const mode = event.target.value;
+                    const verificationName = event.target.closest('.card').querySelector('h6').textContent.trim();
+                    
+                    handleResultsToggle(sanitizedName, mode, verificationName);
+                }
+            });
+            
+            // Also handle label clicks as fallback
+            document.addEventListener('click', function(event) {
+                if (event.target.matches('label[data-verification]')) {
+                    const sanitizedName = event.target.getAttribute('data-verification');
+                    const mode = event.target.getAttribute('data-mode');
+                    const verificationName = event.target.closest('.card').querySelector('h6').textContent.trim();
+                    
+                    // Find and check the corresponding radio button
+                    const radioButton = document.getElementById(`${mode}-${sanitizedName}`);
+                    if (radioButton) {
+                        radioButton.checked = true;
+                        handleResultsToggle(sanitizedName, mode, verificationName);
+                    }
+                }
+            });
+        }
+        
+        // Handle raw/preview toggle for results section
+        function handleResultsToggle(sanitizedName, mode, verificationName) {
+            const rawDiv = document.getElementById(`report-raw-${sanitizedName}`);
+            const previewDiv = document.getElementById(`report-preview-${sanitizedName}`);
+            
+            if (rawDiv && previewDiv) {
+                if (mode === 'raw') {
+                    rawDiv.style.display = 'block';
+                    previewDiv.style.display = 'none';
+                } else if (mode === 'preview') {
+                    rawDiv.style.display = 'none';
+                    previewDiv.style.display = 'block';
+                    
+                    // Render markdown preview
+                    updateResultsMarkdownPreview(sanitizedName, verificationName);
+                }
+            }
+        }
+        
+        // Update markdown preview for results section
+        function updateResultsMarkdownPreview(sanitizedName, verificationName) {
+            const rawDiv = document.getElementById(`report-raw-${sanitizedName}`);
+            const previewDiv = document.getElementById(`report-preview-${sanitizedName}`);
+            
+            if (rawDiv && previewDiv) {
+                const rawContent = rawDiv.textContent;
+                try {
+                    // Use marked.js to render markdown
+                    const htmlContent = marked.parse(rawContent);
+                    previewDiv.innerHTML = htmlContent;
+                    console.log(`Markdown preview updated for results: ${verificationName}`);
+                } catch (error) {
+                    console.error('Error rendering markdown preview:', error);
+                    previewDiv.innerHTML = `<div class="alert alert-warning">Error rendering markdown: ${error.message}</div>`;
+                }
+            }
         }
 
         // Global streaming configuration
