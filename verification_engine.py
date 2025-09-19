@@ -7,6 +7,7 @@ import asyncio
 from typing import List, Optional
 from pathlib import Path
 import aiofiles
+from datetime import datetime
 from models import ProjectConfig, VerificationSection, AIProviderConfig, VerificationResult
 from ai_providers import AIProviderFactory
 from config import Config
@@ -141,7 +142,7 @@ class VerificationEngine:
                 await f.write(f"**Project:** {self.project_config.project_name}\n")
                 await f.write(f"**AI Provider:** {provider_name}\n")
                 await f.write(f"**Model:** {self.ai_config.model}\n")
-                await f.write(f"**Generated on:** {asyncio.get_event_loop().time()}\n\n")
+                await f.write(f"**Generated on:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S %Z')}\n\n")
                 await f.write("## AI Analysis\n\n")
                 await f.write(response)
             
@@ -156,7 +157,7 @@ class VerificationEngine:
                     await f.write(f"**Project:** {self.project_config.project_name}\n")
                     await f.write(f"**AI Provider:** {provider_name}\n")
                     await f.write(f"**Model:** {self.ai_config.model}\n")
-                    await f.write(f"**Generated on:** {asyncio.get_event_loop().time()}\n\n")
+                    await f.write(f"**Generated on:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S %Z')}\n\n")
                     await f.write("## Complete Prompt Sent to AI\n\n")
                     await f.write("```\n")
                     await f.write(prompt)
