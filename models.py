@@ -56,6 +56,7 @@ class AIProviderConfig(BaseModel):
     api_key: Optional[str] = Field(None, description="API key for the provider")
     base_url: Optional[str] = Field(None, description="Base URL for the provider (for custom endpoints)")
     model: str = Field(default="gpt-3.5-turbo", description="Model to use")
+    tag: Optional[str] = Field(None, description="Tag for folder organization (optional)")
     temperature: float = Field(default=0.7, description="Temperature for generation")
     max_tokens: Optional[int] = Field(None, description="Maximum tokens to generate")
 
@@ -76,6 +77,7 @@ class VerificationResult(BaseModel):
     report_file_path: Optional[str] = None
     ai_provider: Optional[str] = None
     ai_model: Optional[str] = None
+    ai_tag: Optional[str] = None
 
 
 class VerificationResponse(BaseModel):

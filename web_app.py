@@ -326,6 +326,41 @@ async def get_report(project_name: str, provider_name: str, model_name: str, fil
     raise HTTPException(status_code=404, detail=f"Report not found: {project_name}/{provider_name}/{model_name}/{filename}")
 
 
+@app.get("/api/reports/{project_name}/{provider_name}/{model_name}/{tag}/{filename}")
+async def get_report_with_tag(project_name: str, provider_name: str, model_name: str, tag: str, filename: str):
+    """Download a verification report from the hierarchical path structure with tag."""
+    # Security: only allow .md files
+    if not filename.endswith('.md'):
+        raise HTTPException(status_code=400, detail="Invalid file type")
+    
+    # Try to find the file in the hierarchical structure
+    # Look in common output directories first
+    common_output_dirs = ["./output", "/tmp/reports", "./reports"]
+    
+    for output_dir in common_output_dirs:
+        if os.path.exists(output_dir):
+            # Build the hierarchical path: output_dir/project_name/provider_name/model_name/tag/filename
+            hierarchical_path = os.path.join(output_dir, project_name, provider_name, model_name, tag, filename)
+            if os.path.exists(hierarchical_path):
+                return FileResponse(hierarchical_path, media_type='text/markdown')
+    
+    # Fallback: search for the file in any subdirectory (for backward compatibility)
+    for root, dirs, files in os.walk("."):
+        if filename in files:
+            # Check if this is in a project folder with the right structure including tag
+            path_parts = root.split(os.sep)
+            if (len(path_parts) >= 5 and 
+                path_parts[-4] == project_name and 
+                path_parts[-3] == provider_name and 
+                path_parts[-2] == model_name and
+                path_parts[-1] == tag):
+                file_path = os.path.join(root, filename)
+                if os.path.exists(file_path):
+                    return FileResponse(file_path, media_type='text/markdown')
+    
+    raise HTTPException(status_code=404, detail=f"Report not found: {project_name}/{provider_name}/{model_name}/{tag}/{filename}")
+
+
 @app.get("/api/reports/{project_name}/{filename}")
 async def get_report_legacy(project_name: str, filename: str):
     """Legacy download endpoint for backward compatibility."""

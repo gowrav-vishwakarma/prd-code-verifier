@@ -333,7 +333,7 @@
                             </div>
                             <div class="card-body ai-config-section">
                                 <div class="row">
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <div class="mb-3">
                                             <label for="aiProvider" class="form-label">AI Provider</label>
                                             <select class="form-select" id="aiProvider" onchange="updateAIProviderConfig()">
@@ -344,10 +344,17 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <div class="mb-3">
                                             <label for="aiModel" class="form-label">Model</label>
                                             <input type="text" class="form-control" id="aiModel" value="gpt-3.5-turbo">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="mb-3">
+                                            <label for="aiTag" class="form-label">Tag (Optional)</label>
+                                            <input type="text" class="form-control" id="aiTag" placeholder="e.g., v1.0, test, prod">
+                                            <small class="form-text text-muted">Used for folder organization</small>
                                         </div>
                                     </div>
                                     <div class="col-md-3">
@@ -851,11 +858,17 @@
             const loadingDiv = document.querySelector('.loading');
             const resultDiv = document.querySelector('.result-section');
             const progressDiv = document.getElementById('progressContent');
+            const resultsContent = document.getElementById('resultsContent');
             
             loadingDiv.style.display = 'block';
             resultDiv.style.display = 'none';
             progressDiv.style.display = 'block';
             progressDiv.innerHTML = '';
+            
+            // Clear previous results to prevent old raw/preview buttons from working
+            if (resultsContent) {
+                resultsContent.innerHTML = '';
+            }
 
             try {
                 // Collect form data
@@ -911,6 +924,7 @@
                     api_key: document.getElementById('aiApiKey').value,
                     base_url: document.getElementById('aiBaseUrl').value,
                     model: document.getElementById('aiModel').value,
+                    tag: document.getElementById('aiTag').value.trim(),
                     temperature: 0.7,
                     max_tokens: null
                 };
@@ -1125,12 +1139,12 @@
                             <h6><i class="fas fa-stream"></i> AI Response Stream - ${verificationName}</h6>
                             <div class="btn-group btn-group-sm" role="group">
                                 <input type="radio" class="btn-check" name="viewMode-${sanitizedName}" id="raw-${sanitizedName}" value="raw" checked>
-                                <label class="btn btn-outline-secondary" for="raw-${sanitizedName}" data-verification="${sanitizedName}" data-mode="raw">
+                                <label class="btn btn-outline-secondary" for="raw-${sanitizedName}" data-verification="${sanitizedName}" data-mode="raw" data-section="streaming">
                                     <i class="fas fa-code"></i> Raw
                                 </label>
                                 
                                 <input type="radio" class="btn-check" name="viewMode-${sanitizedName}" id="preview-${sanitizedName}" value="preview">
-                                <label class="btn btn-outline-primary" for="preview-${sanitizedName}" data-verification="${sanitizedName}" data-mode="preview">
+                                <label class="btn btn-outline-primary" for="preview-${sanitizedName}" data-verification="${sanitizedName}" data-mode="preview" data-section="streaming">
                                     <i class="fas fa-eye"></i> Preview
                                 </label>
                             </div>
@@ -1403,19 +1417,19 @@
                             <div class="d-flex gap-2">
                                 ${result.success && result.report_content ? 
                                     `<div class="btn-group btn-group-sm" role="group">
-                                        <input type="radio" class="btn-check" name="viewMode-${sanitizedName}" id="raw-${sanitizedName}" value="raw" checked>
-                                        <label class="btn btn-outline-secondary" for="raw-${sanitizedName}" data-verification="${sanitizedName}" data-mode="raw">
+                                        <input type="radio" class="btn-check" name="resultsViewMode-${sanitizedName}" id="results-raw-${sanitizedName}" value="raw" checked>
+                                        <label class="btn btn-outline-secondary" for="results-raw-${sanitizedName}" data-verification="${sanitizedName}" data-mode="raw" data-section="results">
                                             <i class="fas fa-code"></i> Raw
                                         </label>
                                         
-                                        <input type="radio" class="btn-check" name="viewMode-${sanitizedName}" id="preview-${sanitizedName}" value="preview">
-                                        <label class="btn btn-outline-primary" for="preview-${sanitizedName}" data-verification="${sanitizedName}" data-mode="preview">
+                                        <input type="radio" class="btn-check" name="resultsViewMode-${sanitizedName}" id="results-preview-${sanitizedName}" value="preview">
+                                        <label class="btn btn-outline-primary" for="results-preview-${sanitizedName}" data-verification="${sanitizedName}" data-mode="preview" data-section="results">
                                             <i class="fas fa-eye"></i> Preview
                                         </label>
                                     </div>` : ''
                                 }
                                 ${result.success && result.report_file_path ? 
-                                    `<a href="/api/reports/${projectName}/${result.ai_provider || 'unknown'}/${result.ai_model || 'unknown'}/${result.report_file_path.split('/').pop()}" class="btn btn-sm btn-outline-primary" download>
+                                    `<a href="/api/reports/${projectName}/${result.ai_provider || 'unknown'}/${result.ai_model || 'unknown'}/${result.ai_tag ? result.ai_tag + '/' : ''}${result.report_file_path.split('/').pop()}" class="btn btn-sm btn-outline-primary" download>
                                         <i class="fas fa-download"></i> Download Report
                                     </a>` : ''
                                 }
@@ -1428,10 +1442,10 @@
                             }
                             ${result.success && result.report_content ? 
                                 `<div class="mt-3">
-                                    <div class="report-content-raw" id="report-raw-${sanitizedName}" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; display: block;">
+                                    <div class="report-content-raw" id="results-report-raw-${sanitizedName}" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; display: block;">
                                         ${result.report_content}
                                     </div>
-                                    <div class="report-content-preview" id="report-preview-${sanitizedName}" style="max-height: 400px; overflow-y: auto; background-color: #ffffff; padding: 15px; border-radius: 5px; border: 1px solid #dee2e6; display: none;">
+                                    <div class="report-content-preview" id="results-report-preview-${sanitizedName}" style="max-height: 400px; overflow-y: auto; background-color: #ffffff; padding: 15px; border-radius: 5px; border: 1px solid #dee2e6; display: none;">
                                         <span class="text-muted">Loading preview...</span>
                                     </div>
                                 </div>` : ''
@@ -1452,8 +1466,8 @@
         function addResultsToggleEventListeners() {
             // Use event delegation for dynamically added elements
             document.addEventListener('change', function(event) {
-                if (event.target.matches('input[name^="viewMode-"]')) {
-                    const sanitizedName = event.target.id.replace(/^(raw-|preview-)/, '');
+                if (event.target.matches('input[name^="resultsViewMode-"]')) {
+                    const sanitizedName = event.target.id.replace(/^(results-raw-|results-preview-)/, '');
                     const mode = event.target.value;
                     const verificationName = event.target.closest('.card').querySelector('h6').textContent.trim();
                     
@@ -1463,13 +1477,13 @@
             
             // Also handle label clicks as fallback
             document.addEventListener('click', function(event) {
-                if (event.target.matches('label[data-verification]')) {
+                if (event.target.matches('label[data-section="results"]')) {
                     const sanitizedName = event.target.getAttribute('data-verification');
                     const mode = event.target.getAttribute('data-mode');
                     const verificationName = event.target.closest('.card').querySelector('h6').textContent.trim();
                     
                     // Find and check the corresponding radio button
-                    const radioButton = document.getElementById(`${mode}-${sanitizedName}`);
+                    const radioButton = document.getElementById(`results-${mode}-${sanitizedName}`);
                     if (radioButton) {
                         radioButton.checked = true;
                         handleResultsToggle(sanitizedName, mode, verificationName);
@@ -1480,8 +1494,8 @@
         
         // Handle raw/preview toggle for results section
         function handleResultsToggle(sanitizedName, mode, verificationName) {
-            const rawDiv = document.getElementById(`report-raw-${sanitizedName}`);
-            const previewDiv = document.getElementById(`report-preview-${sanitizedName}`);
+            const rawDiv = document.getElementById(`results-report-raw-${sanitizedName}`);
+            const previewDiv = document.getElementById(`results-report-preview-${sanitizedName}`);
             
             if (rawDiv && previewDiv) {
                 if (mode === 'raw') {
@@ -1499,8 +1513,8 @@
         
         // Update markdown preview for results section
         function updateResultsMarkdownPreview(sanitizedName, verificationName) {
-            const rawDiv = document.getElementById(`report-raw-${sanitizedName}`);
-            const previewDiv = document.getElementById(`report-preview-${sanitizedName}`);
+            const rawDiv = document.getElementById(`results-report-raw-${sanitizedName}`);
+            const previewDiv = document.getElementById(`results-report-preview-${sanitizedName}`);
             
             if (rawDiv && previewDiv) {
                 const rawContent = rawDiv.textContent;
@@ -1607,16 +1621,31 @@
             if (event.target.matches('label[data-verification]')) {
                 const sanitizedName = event.target.getAttribute('data-verification');
                 const mode = event.target.getAttribute('data-mode');
-                const streamingArea = document.getElementById(`streaming-${sanitizedName}`);
+                const section = event.target.getAttribute('data-section');
                 
-                if (streamingArea) {
-                    const verificationName = streamingArea.getAttribute('data-verification-name');
-                    console.log(`🌐 Global click handler: ${mode} mode for ${verificationName}`);
+                if (section === 'results') {
+                    // Handle results section
+                    const verificationName = event.target.closest('.card').querySelector('h6').textContent.trim();
+                    console.log(`🌐 Global click handler (results): ${mode} mode for ${verificationName}`);
                     
-                    if (mode === 'raw') {
-                        handleRawToggle({ target: { id: `raw-${sanitizedName}` } });
-                    } else if (mode === 'preview') {
-                        handlePreviewToggle({ target: { id: `preview-${sanitizedName}` } });
+                    const radioButton = document.getElementById(`results-${mode}-${sanitizedName}`);
+                    if (radioButton) {
+                        radioButton.checked = true;
+                        handleResultsToggle(sanitizedName, mode, verificationName);
+                    }
+                } else {
+                    // Handle streaming section
+                    const streamingArea = document.getElementById(`streaming-${sanitizedName}`);
+                    
+                    if (streamingArea) {
+                        const verificationName = streamingArea.getAttribute('data-verification-name');
+                        console.log(`🌐 Global click handler (streaming): ${mode} mode for ${verificationName}`);
+                        
+                        if (mode === 'raw') {
+                            handleRawToggle({ target: { id: `raw-${sanitizedName}` } });
+                        } else if (mode === 'preview') {
+                            handlePreviewToggle({ target: { id: `preview-${sanitizedName}` } });
+                        }
                     }
                 }
             }

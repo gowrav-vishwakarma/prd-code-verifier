@@ -177,16 +177,24 @@ class VerificationEngine:
     
     async def run_verification(self, section: VerificationSection) -> VerificationResult:
         """Run verification for a single section."""
-        # Create hierarchical output directory: ProjectName/AIProvider/Model
+        # Create hierarchical output directory: ProjectName/AIProvider/Model/Tag (if tag provided)
         provider_name = self.ai_config.provider.value
         model_name = self.ai_config.model.replace("/", "_").replace(":", "_")  # Sanitize model name for filesystem
+        tag = self.ai_config.tag.strip() if self.ai_config.tag else None
         
-        project_output_dir = os.path.join(
+        # Build path components
+        path_components = [
             self.project_config.output_folder, 
             self.project_config.project_name,
             provider_name,
             model_name
-        )
+        ]
+        
+        # Add tag to path if provided and not empty
+        if tag:
+            path_components.append(tag)
+        
+        project_output_dir = os.path.join(*path_components)
         os.makedirs(project_output_dir, exist_ok=True)
         
         try:
@@ -247,7 +255,8 @@ class VerificationEngine:
                 report_content=response,
                 report_file_path=report_path,
                 ai_provider=provider_name,
-                ai_model=model_name  # Use sanitized model name for consistency
+                ai_model=model_name,  # Use sanitized model name for consistency
+                ai_tag=tag
             )
             
         except Exception as e:
@@ -263,7 +272,8 @@ class VerificationEngine:
                 success=False,
                 error_message=str(e),
                 ai_provider=provider_name,
-                ai_model=model_name
+                ai_model=model_name,
+                ai_tag=tag
             )
     
     async def run_all_verifications(self, verification_names: Optional[List[str]] = None) -> List[VerificationResult]:
