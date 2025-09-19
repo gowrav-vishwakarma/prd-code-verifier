@@ -17,9 +17,11 @@ A comprehensive web application that verifies code implementations against docum
 ### Web Interface
 
 - **Modern UI**: Clean, responsive web interface built with Bootstrap
-- **File Path Management**: Hybrid file selection system with textarea input for absolute paths
+- **File Path Management**: Textarea-based file path input for absolute paths
+- **Verification Selection**: Checkbox-based selection system for running specific verifications
+- **Selection Management**: Select All/Deselect All buttons for easy bulk selection
 - **Real-time Configuration**: Dynamic AI provider configuration with environment defaults
-- **Batch Processing**: Run all verifications or specific ones
+- **Batch Processing**: Run all verifications or selected ones with visual feedback
 - **Download Reports**: Direct download of generated reports
 
 ## 📋 Requirements
@@ -153,12 +155,15 @@ PORT=8000
 
 ### 2. File Path Management
 
-The application uses a hybrid approach for file selection:
+The application uses textarea-based file path input:
 
-1. **Use file pickers** to select files (for convenience)
-2. **Edit the textarea** to add full absolute paths
-3. **One file path per line** in each textarea
-4. **Click the help button (?) ** for guidance on getting file paths
+1. **Enter absolute file paths** directly in the textareas
+2. **One file path per line** in each textarea
+3. **Click the help button (?) ** for guidance on getting file paths
+4. **Supported file types**:
+   - Documentation: `.md`, `.txt`, `.pdf`
+   - Frontend: `.js`, `.jsx`, `.ts`, `.tsx`, `.vue`, `.html`, `.css`, `.scss`
+   - Backend: `.py`, `.java`, `.cpp`, `.c`, `.cs`, `.go`, `.rs`, `.php`, `.rb`
 
 Example file paths:
 
@@ -171,12 +176,29 @@ Example file paths:
 ### 3. Running Verifications
 
 1. **Save your project** first (optional but recommended)
-2. **Click "Run All Verifications"** to process all sections
-3. **Or click "Run Selected"** to run specific verifications
+2. **Select verifications to run**:
+   - Check the boxes next to verification sections you want to run
+   - Use "Select All" to check all verifications
+   - Use "Deselect All" to uncheck all verifications
+   - The counter shows "X of Y selected"
+3. **Run verifications**:
+   - Click "Run All Verifications" to process all sections
+   - Click "Run Selected" to run only checked verifications
 4. **Monitor progress** with the loading indicator
 5. **Download reports** from the results section
 
-### 4. Understanding Reports
+### 4. Verification Selection Features
+
+The application provides flexible verification selection:
+
+- **Individual Selection**: Check/uncheck specific verification sections
+- **Bulk Selection**: Use "Select All" or "Deselect All" buttons
+- **Visual Feedback**: Real-time counter showing "X of Y selected"
+- **Smart Defaults**: When loading a project, all verifications are selected by default
+- **Validation**: System prevents running without selecting any verifications
+- **Error Handling**: Clear notifications for selection issues
+
+### 5. Understanding Reports
 
 Each verification generates:
 
@@ -321,9 +343,20 @@ See `example_project.json` for a sample project configuration:
    - Ensure you have sufficient API credits
 
 4. **File paths not working**
+
    - Use absolute paths (starting with `/`)
    - Ensure files exist and are readable
    - Check file permissions
+
+5. **"Please select at least one verification to run"**
+
+   - Check the boxes next to verification sections you want to run
+   - Use "Select All" to quickly select all verifications
+   - Ensure verification sections have names before running
+
+6. **"Please ensure selected verifications have names"**
+   - Make sure all selected verification sections have names filled in
+   - The verification name field is required for each section
 
 ### Debug Mode
 
