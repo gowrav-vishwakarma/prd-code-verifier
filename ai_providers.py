@@ -72,21 +72,59 @@ class GeminiProvider(BaseAIProvider):
     async def generate_response(self, prompt: str) -> str:
         """Generate response using Gemini API."""
         try:
+            # Parse the prompt to separate system prompt from user content
+            system_prompt, user_content = self._parse_prompt(prompt)
+            
             # Run the synchronous Gemini call in a thread pool
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(
                 None,
                 lambda: self.model.generate_content(
-                    prompt,
+                    user_content,
                     generation_config=genai.types.GenerationConfig(
                         temperature=self.config.temperature,
                         max_output_tokens=self.config.max_tokens
-                    )
+                    ),
+                    system_instruction=system_prompt if system_prompt else None
                 )
             )
             return response.text
         except Exception as e:
             raise Exception(f"Gemini API error: {str(e)}")
+    
+    def _parse_prompt(self, prompt: str) -> tuple[str, str]:
+        """Parse the full prompt to extract system prompt and user content."""
+        # Split the prompt into system prompt and user content
+        if prompt.startswith("SYSTEM PROMPT:\n"):
+            # Find the end of system prompt section
+            system_start = 15  # Length of "SYSTEM PROMPT:\n"
+            
+            # Look for double newline first, then single newline, then any section header
+            system_end = prompt.find("\n\n", system_start)
+            if system_end == -1:
+                # Try single newline followed by a section header
+                for section in ["DOCUMENTATION FILES:", "FRONTEND CODE FILES:", "BACKEND CODE FILES:", "INSTRUCTIONS:"]:
+                    section_pos = prompt.find(f"\n{section}", system_start)
+                    if section_pos != -1:
+                        system_end = section_pos
+                        break
+                
+                if system_end == -1:
+                    # If no clear separation found, treat entire prompt as user content
+                    system_prompt = ""
+                    user_content = prompt
+                else:
+                    system_prompt = prompt[system_start:system_end].strip()
+                    user_content = prompt[system_end + 1:].strip()
+            else:
+                system_prompt = prompt[system_start:system_end].strip()
+                user_content = prompt[system_end + 2:].strip()
+        else:
+            # No system prompt section, treat entire prompt as user content
+            system_prompt = ""
+            user_content = prompt
+        
+        return system_prompt, user_content
 
 
 class OllamaProvider(BaseAIProvider):
