@@ -10,6 +10,7 @@ import openai
 import google.generativeai as genai
 import ollama
 from models import AIProviderConfig, AIProvider
+from config import Config
 
 
 class BaseAIProvider(ABC):
@@ -25,6 +26,11 @@ class BaseAIProvider(ABC):
     
     async def generate_response_with_progress(self, prompt: str, verification_name: str) -> str:
         """Generate a response with progress updates. Default implementation falls back to regular generation."""
+        # Check if streaming is enabled
+        if not Config.ENABLE_STREAMING:
+            return await self.generate_response(prompt)
+        
+        # If streaming is enabled, try to use streaming implementation
         return await self.generate_response(prompt)
 
 
@@ -104,6 +110,63 @@ class OllamaProvider(BaseAIProvider):
             return response["response"]
         except Exception as e:
             raise Exception(f"Ollama error: {str(e)}")
+    
+    async def generate_response_with_progress(self, prompt: str, verification_name: str) -> str:
+        """Generate response with streaming progress updates."""
+        # Check if streaming is enabled
+        if not Config.ENABLE_STREAMING:
+            # Use non-streaming approach
+            return await self.generate_response(prompt)
+        
+        try:
+            response_text = ""
+            stream = await self.client.generate(
+                model=self.config.model,
+                prompt=prompt,
+                options={
+                    "temperature": self.config.temperature,
+                    "num_predict": self.config.max_tokens
+                },
+                stream=True  # Enable streaming
+            )
+            
+            # Emit streaming start event
+            if hasattr(self, 'progress_callback') and self.progress_callback:
+                await self.progress_callback({
+                    "type": "ai_streaming_start",
+                    "message": f"AI streaming started for: {verification_name}",
+                    "verification_name": verification_name
+                })
+            
+            async for chunk in stream:
+                if chunk["response"]:
+                    content = chunk["response"]
+                    response_text += content
+                    
+                    # Emit streaming content event
+                    if hasattr(self, 'progress_callback') and self.progress_callback:
+                        await self.progress_callback({
+                            "type": "ai_streaming_content",
+                            "message": content,
+                            "verification_name": verification_name,
+                            "partial_response": response_text
+                        })
+            
+            # Emit streaming complete event
+            if hasattr(self, 'progress_callback') and self.progress_callback:
+                await self.progress_callback({
+                    "type": "ai_streaming_complete",
+                    "message": f"AI streaming completed for: {verification_name}",
+                    "verification_name": verification_name,
+                    "total_length": len(response_text)
+                })
+            
+            return response_text
+            
+        except Exception as e:
+            # Fallback to non-streaming if streaming fails
+            print(f"Ollama streaming failed, falling back to non-streaming: {e}")
+            return await self.generate_response(prompt)
 
 
 class LMStudioProvider(BaseAIProvider):
@@ -117,48 +180,57 @@ class LMStudioProvider(BaseAIProvider):
         )
     
     async def generate_response(self, prompt: str) -> str:
-        """Generate response using LM Studio (OpenAI compatible API) with streaming support."""
+        """Generate response using LM Studio (OpenAI compatible API)."""
         try:
-            # Try streaming first, fallback to non-streaming if not supported
-            try:
-                response_text = ""
-                stream = await self.client.chat.completions.create(
-                    model=self.config.model,
-                    messages=[
-                        {"role": "system", "content": "You are a helpful assistant that verifies code against documentation."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=self.config.temperature,
-                    max_tokens=self.config.max_tokens,
-                    stream=True  # Enable streaming
-                )
-                
-                async for chunk in stream:
-                    if chunk.choices[0].delta.content is not None:
-                        response_text += chunk.choices[0].delta.content
-                
-                return response_text
-                
-            except Exception as stream_error:
-                # Fallback to non-streaming if streaming fails
-                print(f"LM Studio streaming failed, falling back to non-streaming: {stream_error}")
-                response = await self.client.chat.completions.create(
-                    model=self.config.model,
-                    messages=[
-                        {"role": "system", "content": "You are a helpful assistant that verifies code against documentation."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=self.config.temperature,
-                    max_tokens=self.config.max_tokens,
-                    stream=False
-                )
-                return response.choices[0].message.content
+            # Check if streaming is enabled
+            if Config.ENABLE_STREAMING:
+                # Try streaming first, fallback to non-streaming if not supported
+                try:
+                    response_text = ""
+                    stream = await self.client.chat.completions.create(
+                        model=self.config.model,
+                        messages=[
+                            {"role": "system", "content": "You are a helpful assistant that verifies code against documentation."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        temperature=self.config.temperature,
+                        max_tokens=self.config.max_tokens,
+                        stream=True  # Enable streaming
+                    )
+                    
+                    async for chunk in stream:
+                        if chunk.choices[0].delta.content is not None:
+                            response_text += chunk.choices[0].delta.content
+                    
+                    return response_text
+                    
+                except Exception as stream_error:
+                    # Fallback to non-streaming if streaming fails
+                    print(f"LM Studio streaming failed, falling back to non-streaming: {stream_error}")
+            
+            # Use non-streaming approach
+            response = await self.client.chat.completions.create(
+                model=self.config.model,
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant that verifies code against documentation."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=self.config.temperature,
+                max_tokens=self.config.max_tokens,
+                stream=False
+            )
+            return response.choices[0].message.content
                 
         except Exception as e:
             raise Exception(f"LM Studio API error: {str(e)}")
     
     async def generate_response_with_progress(self, prompt: str, verification_name: str) -> str:
         """Generate response with streaming progress updates."""
+        # Check if streaming is enabled
+        if not Config.ENABLE_STREAMING:
+            # Use non-streaming approach
+            return await self.generate_response(prompt)
+        
         try:
             # Try streaming first, fallback to non-streaming if not supported
             try:

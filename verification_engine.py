@@ -247,7 +247,7 @@ class VerificationEngine:
                 report_content=response,
                 report_file_path=report_path,
                 ai_provider=provider_name,
-                ai_model=self.ai_config.model
+                ai_model=model_name  # Use sanitized model name for consistency
             )
             
         except Exception as e:
@@ -262,8 +262,8 @@ class VerificationEngine:
                 verification_name=section.name,
                 success=False,
                 error_message=str(e),
-                ai_provider=self.ai_config.provider.value,
-                ai_model=self.ai_config.model
+                ai_provider=provider_name,
+                ai_model=model_name
             )
     
     async def run_all_verifications(self, verification_names: Optional[List[str]] = None) -> List[VerificationResult]:
@@ -287,12 +287,16 @@ class VerificationEngine:
         processed_results = []
         for i, result in enumerate(results):
             if isinstance(result, Exception):
+                # Get sanitized names for consistency
+                provider_name = self.ai_config.provider.value
+                model_name = self.ai_config.model.replace("/", "_").replace(":", "_")
+                
                 processed_results.append(VerificationResult(
                     verification_name=sections_to_run[i].name,
                     success=False,
                     error_message=str(result),
-                    ai_provider=self.ai_config.provider.value,
-                    ai_model=self.ai_config.model
+                    ai_provider=provider_name,
+                    ai_model=model_name
                 ))
             else:
                 processed_results.append(result)

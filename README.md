@@ -25,6 +25,7 @@ A comprehensive web application that verifies code implementations against docum
 - **Batch Processing**: Run all verifications or selected ones with visual feedback
 - **Download Reports**: Direct download of generated reports
 - **Real-time Markdown Preview**: Live markdown rendering during AI streaming with toggle between raw text and preview modes
+- **Configurable Streaming**: Environment variable to enable/disable streaming for performance optimization
 
 ## 📋 Requirements
 
@@ -99,6 +100,9 @@ LM_STUDIO_MODEL=qwen/qwen3-30b-a3b-2507
 DEBUG=True  # Set to False to disable prompt saving
 HOST=0.0.0.0
 PORT=8000
+
+# Streaming Configuration
+ENABLE_STREAMING=True  # Set to False to disable real-time streaming (faster for small responses)
 ```
 
 ### AI Provider Setup
@@ -358,6 +362,12 @@ This structure allows you to:
 - **Organize reports** by project, provider, and model
 - **Easily identify** which AI configuration generated each report
 
+**Download URLs:**
+
+- Reports are downloaded using the hierarchical path: `/api/reports/{project_name}/{provider_name}/{model_name}/{filename}`
+- The system automatically constructs the correct download URL based on the AI provider and model used
+- Legacy download URLs are still supported for backward compatibility
+
 ## 🏗️ Project Structure
 
 ```
@@ -399,7 +409,8 @@ prd-code-verifier/
 ### Verification
 
 - `POST /api/verification/run` - Run verification process
-- `GET /api/reports/{project_name}/{filename}` - Download verification report
+- `GET /api/reports/{project_name}/{provider_name}/{model_name}/{filename}` - Download verification report (hierarchical path)
+- `GET /api/reports/{project_name}/{filename}` - Download verification report (legacy endpoint for backward compatibility)
 
 ## 🔧 Development
 
@@ -507,6 +518,29 @@ Set `DEBUG=True` in your `.env` file to:
 - Save complete prompts sent to AI
 - Enable detailed error logging
 - Help troubleshoot verification issues
+
+### Performance Optimization
+
+#### Streaming Configuration
+
+The application supports configurable streaming for optimal performance:
+
+- **`ENABLE_STREAMING=True`** (default): Shows real-time streaming with markdown preview
+  - Best for: Large responses, interactive monitoring, markdown content
+  - Features: Live updates, markdown preview, toggle between raw/preview modes
+- **`ENABLE_STREAMING=False`**: Uses faster non-streaming mode
+  - Best for: Small responses, batch processing, performance-critical scenarios
+  - Features: Simple progress indicator, faster processing, reduced UI complexity
+
+#### When to Disable Streaming
+
+Consider setting `ENABLE_STREAMING=False` when:
+
+- Processing many small verifications
+- Running batch operations
+- Using slower AI providers
+- Prioritizing speed over real-time feedback
+- Working with non-markdown responses
 
 ## 🤝 Contributing
 

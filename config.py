@@ -18,6 +18,7 @@ class Config:
     DEBUG = os.getenv("DEBUG", "True").lower() == "true"
     HOST = os.getenv("HOST", "0.0.0.0")
     PORT = int(os.getenv("PORT", 8000))
+    ENABLE_STREAMING = os.getenv("ENABLE_STREAMING", "True").lower() == "true"
     
     # Default AI provider
     DEFAULT_AI_PROVIDER = os.getenv("DEFAULT_AI_PROVIDER", "openai")

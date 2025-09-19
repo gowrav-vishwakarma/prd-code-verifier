@@ -172,43 +172,57 @@
                 <div class="row mb-4">
                     <div class="col-12">
                         <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-cog"></i> Project Configuration</h5>
+                            <div class="card-header" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#projectConfigCollapse" aria-expanded="false" aria-controls="projectConfigCollapse">
+                                <h5><i class="fas fa-cog"></i> Project Configuration <i class="fas fa-chevron-down float-end" id="projectConfigChevron"></i></h5>
                             </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label for="projectName" class="form-label">Project Name</label>
-                                            <input type="text" class="form-control" id="projectName" required>
+                            <div class="collapse" id="projectConfigCollapse">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="projectName" class="form-label">Project Name</label>
+                                                <input type="text" class="form-control" id="projectName" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="outputFolder" class="form-label">Output Folder</label>
+                                                <input type="text" class="form-control" id="outputFolder" placeholder="/path/to/output" required>
+                                            </div>
                                         </div>
-                                        <div class="mb-3">
-                                            <label for="outputFolder" class="form-label">Output Folder</label>
-                                            <input type="text" class="form-control" id="outputFolder" placeholder="/path/to/output" required>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="documentationRootPath" class="form-label">Documentation Root Path</label>
+                                                <input type="text" class="form-control" id="documentationRootPath" placeholder="/path/to/docs" title="Root directory for all documentation files">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="frontendProjectPath" class="form-label">Frontend Project Path</label>
+                                                <input type="text" class="form-control" id="frontendProjectPath" placeholder="/path/to/frontend" title="Root directory for all frontend code files">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="backendProjectPath" class="form-label">Backend Project Path</label>
+                                                <input type="text" class="form-control" id="backendProjectPath" placeholder="/path/to/backend" title="Root directory for all backend code files">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <!-- Empty column for better layout -->
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label for="documentationRootPath" class="form-label">Documentation Root Path</label>
-                                            <input type="text" class="form-control" id="documentationRootPath" placeholder="/path/to/docs" title="Root directory for all documentation files">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="frontendProjectPath" class="form-label">Frontend Project Path</label>
-                                            <input type="text" class="form-control" id="frontendProjectPath" placeholder="/path/to/frontend" title="Root directory for all frontend code files">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="backendProjectPath" class="form-label">Backend Project Path</label>
-                                            <input type="text" class="form-control" id="backendProjectPath" placeholder="/path/to/backend" title="Root directory for all backend code files">
+                                    
+                                    <!-- Full-width text areas -->
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="mb-3">
+                                                <label for="globalSystemPrompt" class="form-label">Global System Prompt</label>
+                                                <textarea class="form-control" id="globalSystemPrompt" rows="6" placeholder="Enter global system prompt..."></textarea>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label for="globalSystemPrompt" class="form-label">Global System Prompt</label>
-                                            <textarea class="form-control" id="globalSystemPrompt" rows="3" placeholder="Enter global system prompt..."></textarea>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="globalInstructions" class="form-label">Global Instructions</label>
-                                            <textarea class="form-control" id="globalInstructions" rows="3" placeholder="Enter global instructions..."></textarea>
+                                    
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="mb-3">
+                                                <label for="globalInstructions" class="form-label">Global Instructions</label>
+                                                <textarea class="form-control" id="globalInstructions" rows="6" placeholder="Enter global instructions..."></textarea>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1009,60 +1023,82 @@
             
             streamingArea.id = `streaming-${sanitizedName}`;
             streamingArea.className = 'mt-2';
-            streamingArea.innerHTML = `
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h6><i class="fas fa-stream"></i> AI Response Stream - ${verificationName}</h6>
-                        <div class="btn-group btn-group-sm" role="group">
-                            <input type="radio" class="btn-check" name="viewMode-${sanitizedName}" id="raw-${sanitizedName}" value="raw" checked>
-                            <label class="btn btn-outline-secondary" for="raw-${sanitizedName}" data-verification="${sanitizedName}" data-mode="raw">
-                                <i class="fas fa-code"></i> Raw
-                            </label>
-                            
-                            <input type="radio" class="btn-check" name="viewMode-${sanitizedName}" id="preview-${sanitizedName}" value="preview">
-                            <label class="btn btn-outline-primary" for="preview-${sanitizedName}" data-verification="${sanitizedName}" data-mode="preview">
-                                <i class="fas fa-eye"></i> Preview
-                            </label>
+            
+            // Only show streaming UI if streaming is enabled
+            if (streamingEnabled) {
+                streamingArea.innerHTML = `
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6><i class="fas fa-stream"></i> AI Response Stream - ${verificationName}</h6>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <input type="radio" class="btn-check" name="viewMode-${sanitizedName}" id="raw-${sanitizedName}" value="raw" checked>
+                                <label class="btn btn-outline-secondary" for="raw-${sanitizedName}" data-verification="${sanitizedName}" data-mode="raw">
+                                    <i class="fas fa-code"></i> Raw
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="viewMode-${sanitizedName}" id="preview-${sanitizedName}" value="preview">
+                                <label class="btn btn-outline-primary" for="preview-${sanitizedName}" data-verification="${sanitizedName}" data-mode="preview">
+                                    <i class="fas fa-eye"></i> Preview
+                                </label>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="streaming-content-raw" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; display: block;">
+                                <span class="text-muted">Waiting for AI response...</span>
+                            </div>
+                            <div class="streaming-content-preview" style="max-height: 400px; overflow-y: auto; background-color: #ffffff; padding: 15px; border-radius: 5px; border: 1px solid #dee2e6; display: none;">
+                                <span class="text-muted">Waiting for AI response...</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <div class="streaming-content-raw" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; display: block;">
-                            <span class="text-muted">Waiting for AI response...</span>
+                `;
+                
+                // Add event listeners for view mode toggle using event delegation
+                addToggleEventListeners(sanitizedName, verificationName);
+                
+                // Add fallback click handlers on labels
+                setTimeout(() => {
+                    const rawLabel = streamingArea.querySelector(`label[data-verification="${sanitizedName}"][data-mode="raw"]`);
+                    const previewLabel = streamingArea.querySelector(`label[data-verification="${sanitizedName}"][data-mode="preview"]`);
+                    
+                    if (rawLabel) {
+                        rawLabel.addEventListener('click', () => {
+                            console.log(`🔄 Raw label clicked for: ${verificationName}`);
+                            handleRawToggle({ target: { id: `raw-${sanitizedName}` } });
+                        });
+                    }
+                    
+                    if (previewLabel) {
+                        previewLabel.addEventListener('click', () => {
+                            console.log(`🔄 Preview label clicked for: ${verificationName}`);
+                            handlePreviewToggle({ target: { id: `preview-${sanitizedName}` } });
+                        });
+                    }
+                }, 150);
+            } else {
+                // Show simple progress indicator when streaming is disabled
+                streamingArea.innerHTML = `
+                    <div class="card">
+                        <div class="card-header">
+                            <h6><i class="fas fa-cog fa-spin"></i> AI Processing - ${verificationName}</h6>
                         </div>
-                        <div class="streaming-content-preview" style="max-height: 400px; overflow-y: auto; background-color: #ffffff; padding: 15px; border-radius: 5px; border: 1px solid #dee2e6; display: none;">
-                            <span class="text-muted">Waiting for AI response...</span>
+                        <div class="card-body">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Processing...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Processing AI response...</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
+            
             progressDiv.appendChild(streamingArea);
             
             // Store the sanitized name for later use
             streamingArea.setAttribute('data-verification-name', verificationName);
             streamingArea.setAttribute('data-sanitized-name', sanitizedName);
-            
-            // Add event listeners for view mode toggle using event delegation
-            addToggleEventListeners(sanitizedName, verificationName);
-            
-            // Add fallback click handlers on labels
-            setTimeout(() => {
-                const rawLabel = streamingArea.querySelector(`label[data-verification="${sanitizedName}"][data-mode="raw"]`);
-                const previewLabel = streamingArea.querySelector(`label[data-verification="${sanitizedName}"][data-mode="preview"]`);
-                
-                if (rawLabel) {
-                    rawLabel.addEventListener('click', () => {
-                        console.log(`🔄 Raw label clicked for: ${verificationName}`);
-                        handleRawToggle({ target: { id: `raw-${sanitizedName}` } });
-                    });
-                }
-                
-                if (previewLabel) {
-                    previewLabel.addEventListener('click', () => {
-                        console.log(`🔄 Preview label clicked for: ${verificationName}`);
-                        handlePreviewToggle({ target: { id: `preview-${sanitizedName}` } });
-                    });
-                }
-            }, 150);
         }
         
         function addToggleEventListeners(sanitizedName, verificationName) {
@@ -1138,30 +1174,45 @@
             const streamingArea = document.getElementById(`streaming-${sanitizedName}`);
             
             if (streamingArea) {
-                const rawContentDiv = streamingArea.querySelector('.streaming-content-raw');
-                const previewContentDiv = streamingArea.querySelector('.streaming-content-preview');
-                const previewRadio = document.getElementById(`preview-${sanitizedName}`);
-                const rawRadio = document.getElementById(`raw-${sanitizedName}`);
-                
-                if (rawContentDiv) {
-                    // Update raw content
-                    rawContentDiv.textContent = fullResponse;
-                    // Scroll to bottom
-                    rawContentDiv.scrollTop = rawContentDiv.scrollHeight;
-                }
-                
-                // Auto-switch to preview mode if markdown content is detected and user hasn't manually selected raw mode
-                if (isMarkdownContent(fullResponse) && rawRadio && !rawRadio.checked) {
-                    if (previewRadio && !previewRadio.checked) {
-                        previewRadio.checked = true;
-                        if (rawContentDiv) rawContentDiv.style.display = 'none';
-                        if (previewContentDiv) previewContentDiv.style.display = 'block';
+                if (streamingEnabled) {
+                    // Streaming mode - update content areas
+                    const rawContentDiv = streamingArea.querySelector('.streaming-content-raw');
+                    const previewContentDiv = streamingArea.querySelector('.streaming-content-preview');
+                    const previewRadio = document.getElementById(`preview-${sanitizedName}`);
+                    const rawRadio = document.getElementById(`raw-${sanitizedName}`);
+                    
+                    if (rawContentDiv) {
+                        // Update raw content
+                        rawContentDiv.textContent = fullResponse;
+                        // Scroll to bottom
+                        rawContentDiv.scrollTop = rawContentDiv.scrollHeight;
                     }
-                }
-                
-                if (previewContentDiv && previewContentDiv.style.display !== 'none') {
-                    // Update markdown preview in real-time
-                    updateMarkdownPreview(verificationName);
+                    
+                    // Auto-switch to preview mode if markdown content is detected and user hasn't manually selected raw mode
+                    if (isMarkdownContent(fullResponse) && rawRadio && !rawRadio.checked) {
+                        if (previewRadio && !previewRadio.checked) {
+                            previewRadio.checked = true;
+                            if (rawContentDiv) rawContentDiv.style.display = 'none';
+                            if (previewContentDiv) previewContentDiv.style.display = 'block';
+                        }
+                    }
+                    
+                    if (previewContentDiv && previewContentDiv.style.display !== 'none') {
+                        // Update markdown preview in real-time
+                        updateMarkdownPreview(verificationName);
+                    }
+                } else {
+                    // Non-streaming mode - just show completion
+                    const processingDiv = streamingArea.querySelector('.text-center');
+                    if (processingDiv) {
+                        processingDiv.innerHTML = `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i>
+                                <strong>AI Processing Complete!</strong><br>
+                                Response received (${fullResponse.length} characters)
+                            </div>
+                        `;
+                    }
                 }
             }
         }
@@ -1256,7 +1307,7 @@
                                 ${result.verification_name}
                             </h6>
                             ${result.success && result.report_file_path ? 
-                                `<a href="/api/reports/${projectName}/${result.report_file_path.split('/').pop()}" class="btn btn-sm btn-outline-primary" download>
+                                `<a href="/api/reports/${projectName}/${result.ai_provider || 'unknown'}/${result.ai_model || 'unknown'}/${result.report_file_path.split('/').pop()}" class="btn btn-sm btn-outline-primary" download>
                                     <i class="fas fa-download"></i> Download Report
                                 </a>` : ''
                             }
@@ -1275,7 +1326,10 @@
             resultDiv.style.display = 'block';
         }
 
-        // Load default AI configuration
+        // Global streaming configuration
+        let streamingEnabled = true;
+
+        // Load default AI configuration and streaming settings
         async function loadDefaultAIConfig() {
             try {
                 const response = await fetch('/api/config/default-ai');
@@ -1288,6 +1342,20 @@
                 }
             } catch (error) {
                 console.error('Error loading default AI config:', error);
+            }
+        }
+
+        // Load streaming configuration
+        async function loadStreamingConfig() {
+            try {
+                const response = await fetch('/api/config/streaming');
+                if (response.ok) {
+                    const config = await response.json();
+                    streamingEnabled = config.enabled;
+                    console.log(`Streaming ${streamingEnabled ? 'enabled' : 'disabled'} by configuration`);
+                }
+            } catch (error) {
+                console.error('Error loading streaming config:', error);
             }
         }
 
@@ -1367,6 +1435,23 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             loadDefaultAIConfig();
+            loadStreamingConfig();
+            
+            // Handle project configuration collapse chevron rotation
+            const projectConfigCollapse = document.getElementById('projectConfigCollapse');
+            const projectConfigChevron = document.getElementById('projectConfigChevron');
+            
+            if (projectConfigCollapse && projectConfigChevron) {
+                projectConfigCollapse.addEventListener('show.bs.collapse', function() {
+                    projectConfigChevron.classList.remove('fa-chevron-down');
+                    projectConfigChevron.classList.add('fa-chevron-up');
+                });
+                
+                projectConfigCollapse.addEventListener('hide.bs.collapse', function() {
+                    projectConfigChevron.classList.remove('fa-chevron-up');
+                    projectConfigChevron.classList.add('fa-chevron-down');
+                });
+            }
         });
     </script>
 </body>
