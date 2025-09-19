@@ -600,27 +600,35 @@
         }
 
         // Update AI provider configuration
-        function updateAIProviderConfig() {
+        function updateAIProviderConfig(forceDefaults = false) {
             const provider = document.getElementById('aiProvider').value;
             const modelField = document.getElementById('aiModel');
             const baseUrlField = document.getElementById('aiBaseUrl');
             
-            // Set default models and URLs based on provider
+            // Set default models and URLs based on provider (only if forceDefaults is true or field is empty)
             switch(provider) {
                 case 'openai':
-                    modelField.value = 'gpt-3.5-turbo';
+                    if (forceDefaults || !modelField.value) {
+                        modelField.value = 'gpt-3.5-turbo';
+                    }
                     baseUrlField.placeholder = 'https://api.openai.com/v1';
                     break;
                 case 'gemini':
-                    modelField.value = 'gemini-pro';
+                    if (forceDefaults || !modelField.value) {
+                        modelField.value = 'gemini-pro';
+                    }
                     baseUrlField.placeholder = 'https://generativelanguage.googleapis.com';
                     break;
                 case 'ollama':
-                    modelField.value = 'llama2';
+                    if (forceDefaults || !modelField.value) {
+                        modelField.value = 'llama2';
+                    }
                     baseUrlField.placeholder = 'http://localhost:11434';
                     break;
                 case 'lm_studio':
-                    modelField.value = 'local-model';
+                    if (forceDefaults || !modelField.value) {
+                        modelField.value = 'local-model';
+                    }
                     baseUrlField.placeholder = 'http://localhost:1234/v1';
                     break;
             }
@@ -712,6 +720,19 @@
             document.getElementById('globalSystemPrompt').value = projectData.global_system_prompt || '';
             document.getElementById('globalInstructions').value = projectData.global_instructions || '';
 
+            // Populate AI configuration
+            if (projectData.ai_config) {
+                // Set provider first, then update UI (this sets placeholders only)
+                document.getElementById('aiProvider').value = projectData.ai_config.provider || 'openai';
+                updateAIProviderConfig(); // This will only set placeholders, not override values
+                
+                // Now set the actual values from the project
+                document.getElementById('aiModel').value = projectData.ai_config.model || 'gpt-3.5-turbo';
+                document.getElementById('aiApiKey').value = projectData.ai_config.api_key || '';
+                document.getElementById('aiBaseUrl').value = projectData.ai_config.base_url || '';
+                document.getElementById('aiTag').value = projectData.ai_config.tag || '';
+            }
+
             // Clear existing sections
             document.getElementById('verificationSections').innerHTML = '';
             verificationSectionCount = 0;
@@ -800,6 +821,18 @@
             });
             
             formData.append('verification_data', JSON.stringify(sections));
+            
+            // Collect AI configuration
+            const aiConfig = {
+                provider: document.getElementById('aiProvider').value,
+                model: document.getElementById('aiModel').value,
+                api_key: document.getElementById('aiApiKey').value,
+                base_url: document.getElementById('aiBaseUrl').value,
+                tag: document.getElementById('aiTag').value,
+                temperature: 0.7, // Default temperature
+                max_tokens: null // Default max tokens
+            };
+            formData.append('ai_config_data', JSON.stringify(aiConfig));
 
             try {
                 const response = await fetch('/api/projects/save', {

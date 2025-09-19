@@ -76,7 +76,8 @@ async def save_project(
     backend_project_path: str = Form(""),
     global_system_prompt: str = Form(""),
     global_instructions: str = Form(""),
-    verification_data: str = Form(...)  # JSON string of verification sections
+    verification_data: str = Form(...),  # JSON string of verification sections
+    ai_config_data: str = Form("")  # JSON string of AI configuration
 ):
     """Save project configuration."""
     try:
@@ -87,6 +88,16 @@ async def save_project(
             for section_data in verification_sections_data
         ]
         
+        # Parse AI configuration if provided
+        ai_config = None
+        if ai_config_data and ai_config_data.strip():
+            try:
+                ai_config_data_parsed = json.loads(ai_config_data)
+                ai_config = AIProviderConfig(**ai_config_data_parsed)
+            except (json.JSONDecodeError, ValidationError) as e:
+                # If AI config is invalid, continue without it
+                print(f"Warning: Invalid AI configuration provided: {e}")
+        
         # Create project config
         project_config = ProjectConfig(
             project_name=project_name,
@@ -96,7 +107,8 @@ async def save_project(
             backend_project_path=backend_project_path,
             global_system_prompt=global_system_prompt,
             global_instructions=global_instructions,
-            verification_sections=verification_sections
+            verification_sections=verification_sections,
+            ai_config=ai_config
         )
         
         # Save to file

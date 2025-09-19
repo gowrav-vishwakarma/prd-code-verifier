@@ -222,7 +222,34 @@ class VerificationEngine:
                 await f.write(f"**Project:** {self.project_config.project_name}\n")
                 await f.write(f"**AI Provider:** {provider_name}\n")
                 await f.write(f"**Model:** {self.ai_config.model}\n")
+                if tag:
+                    await f.write(f"**Tag:** {tag}\n")
                 await f.write(f"**Generated on:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S %Z')}\n\n")
+                
+                # Add files used in verification
+                await f.write("## Files Used in Verification\n\n")
+                
+                # Documentation files
+                if section.documentation_files:
+                    await f.write("### Documentation Files\n")
+                    for doc_file in section.documentation_files:
+                        await f.write(f"- `{doc_file}`\n")
+                    await f.write("\n")
+                
+                # Frontend code files
+                if section.frontend_code_files:
+                    await f.write("### Frontend Code Files\n")
+                    for frontend_file in section.frontend_code_files:
+                        await f.write(f"- `{frontend_file}`\n")
+                    await f.write("\n")
+                
+                # Backend code files
+                if section.backend_code_files:
+                    await f.write("### Backend Code Files\n")
+                    for backend_file in section.backend_code_files:
+                        await f.write(f"- `{backend_file}`\n")
+                    await f.write("\n")
+                
                 await f.write("## AI Analysis\n\n")
                 await f.write(response)
             
@@ -242,7 +269,34 @@ class VerificationEngine:
                     await f.write(f"**Project:** {self.project_config.project_name}\n")
                     await f.write(f"**AI Provider:** {provider_name}\n")
                     await f.write(f"**Model:** {self.ai_config.model}\n")
+                    if tag:
+                        await f.write(f"**Tag:** {tag}\n")
                     await f.write(f"**Generated on:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S %Z')}\n\n")
+                    
+                    # Add files used in verification
+                    await f.write("## Files Used in Verification\n\n")
+                    
+                    # Documentation files
+                    if section.documentation_files:
+                        await f.write("### Documentation Files\n")
+                        for doc_file in section.documentation_files:
+                            await f.write(f"- `{doc_file}`\n")
+                        await f.write("\n")
+                    
+                    # Frontend code files
+                    if section.frontend_code_files:
+                        await f.write("### Frontend Code Files\n")
+                        for frontend_file in section.frontend_code_files:
+                            await f.write(f"- `{frontend_file}`\n")
+                        await f.write("\n")
+                    
+                    # Backend code files
+                    if section.backend_code_files:
+                        await f.write("### Backend Code Files\n")
+                        for backend_file in section.backend_code_files:
+                            await f.write(f"- `{backend_file}`\n")
+                        await f.write("\n")
+                    
                     await f.write("## Complete Prompt Sent to AI\n\n")
                     await f.write("```\n")
                     await f.write(prompt)

@@ -48,6 +48,7 @@ class ProjectConfig(BaseModel):
     global_system_prompt: str = Field(default="", description="Global system prompt for all verifications")
     global_instructions: str = Field(default="", description="Global instructions for all verifications")
     verification_sections: List[VerificationSection] = Field(default_factory=list, description="List of verification sections")
+    ai_config: Optional["AIProviderConfig"] = Field(None, description="AI provider configuration for this project")
 
 
 class AIProviderConfig(BaseModel):
