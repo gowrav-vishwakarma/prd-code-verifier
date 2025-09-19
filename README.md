@@ -24,6 +24,7 @@ A comprehensive web application that verifies code implementations against docum
 - **Real-time Configuration**: Dynamic AI provider configuration with environment defaults
 - **Batch Processing**: Run all verifications or selected ones with visual feedback
 - **Download Reports**: Direct download of generated reports
+- **Real-time Markdown Preview**: Live markdown rendering during AI streaming with toggle between raw text and preview modes
 
 ## 📋 Requirements
 
@@ -267,8 +268,9 @@ The application provides flexible prompt management with three modes for both sy
 3. **Run verifications**:
    - Click "Run All Verifications" to process all sections
    - Click "Run Selected" to run only checked verifications
-4. **Monitor progress** with the loading indicator
-5. **Download reports** from the results section
+4. **Monitor progress** with the loading indicator and real-time streaming
+5. **View AI responses** in real-time with markdown preview
+6. **Download reports** from the results section
 
 ### 5. Verification Selection Features
 
@@ -281,7 +283,47 @@ The application provides flexible verification selection:
 - **Validation**: System prevents running without selecting any verifications
 - **Error Handling**: Clear notifications for selection issues
 
-### 6. Understanding Reports
+### 6. Real-time Markdown Preview
+
+The application features a powerful real-time markdown preview system for viewing AI responses:
+
+#### **Features:**
+
+- **Dual View Modes**: Toggle between raw text and rendered markdown preview
+- **Auto-Detection**: Automatically switches to preview mode when markdown content is detected
+- **Real-time Rendering**: Updates markdown preview as AI streams content
+- **Manual Control**: Override auto-detection with manual toggle buttons
+- **Responsive Design**: Optimized for both desktop and mobile viewing
+
+#### **How to Use:**
+
+1. **Start a verification** - The streaming area appears automatically
+2. **View modes**:
+   - **Raw**: Shows the original markdown text (default)
+   - **Preview**: Shows rendered markdown with proper formatting
+3. **Auto-switching**: The system automatically switches to preview mode when it detects markdown formatting
+4. **Manual override**: Use the toggle buttons to switch between modes at any time
+5. **Real-time updates**: Both views update in real-time as the AI streams content
+
+#### **Markdown Features Supported:**
+
+- Headers (H1-H6)
+- Bold and italic text
+- Code blocks and inline code
+- Lists (ordered and unordered)
+- Blockquotes
+- Tables
+- Links
+- Horizontal rules
+
+#### **Benefits:**
+
+- **Better Readability**: See formatted content instead of raw markdown
+- **Real-time Feedback**: Monitor AI responses as they're generated
+- **Flexible Viewing**: Choose the view that works best for your needs
+- **Professional Output**: Preview how the final report will look
+
+### 7. Understanding Reports
 
 Each verification generates:
 
