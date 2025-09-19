@@ -160,6 +160,9 @@
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h5><i class="fas fa-check-circle"></i> Verification Sections</h5>
                                 <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-outline-info btn-sm" onclick="showPathHelp()" title="How to get file paths">
+                                        <i class="fas fa-question-circle"></i> File Path Help
+                                    </button>
                                     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="selectAllVerifications()">
                                         <i class="fas fa-check-square"></i> Select All
                                     </button>
@@ -172,6 +175,12 @@
                                 </div>
                             </div>
                             <div class="card-body">
+                                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>File Paths:</strong> Enter absolute file paths (one per line) in the textareas below. 
+                                    Click "File Path Help" above for guidance on getting file paths.
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
                                 <div id="verificationSections">
                                     <!-- Verification sections will be added here -->
                                 </div>
@@ -257,31 +266,16 @@
                                 <label class="form-label">Documentation Files (one per line)</label>
                                 <textarea class="form-control" name="documentationFiles" rows="3" placeholder="/absolute/path/to/doc1.md&#10;/absolute/path/to/doc2.md"></textarea>
                                 <small class="form-text text-muted">Enter absolute file paths, one per line.</small>
-                                <div class="d-flex gap-2 mt-2">
-                                    <button type="button" class="btn btn-outline-info btn-sm" onclick="showPathHelp()" title="How to get file paths">
-                                        <i class="fas fa-question-circle"></i>
-                                    </button>
-                                </div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Frontend Code Files (one per line)</label>
                                 <textarea class="form-control" name="frontendFiles" rows="3" placeholder="/absolute/path/to/frontend.js&#10;/absolute/path/to/component.jsx"></textarea>
                                 <small class="form-text text-muted">Enter absolute file paths, one per line.</small>
-                                <div class="d-flex gap-2 mt-2">
-                                    <button type="button" class="btn btn-outline-info btn-sm" onclick="showPathHelp()" title="How to get file paths">
-                                        <i class="fas fa-question-circle"></i>
-                                    </button>
-                                </div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Backend Code Files (one per line)</label>
                                 <textarea class="form-control" name="backendFiles" rows="3" placeholder="/absolute/path/to/backend.py&#10;/absolute/path/to/api.js"></textarea>
                                 <small class="form-text text-muted">Enter absolute file paths, one per line.</small>
-                                <div class="d-flex gap-2 mt-2">
-                                    <button type="button" class="btn btn-outline-info btn-sm" onclick="showPathHelp()" title="How to get file paths">
-                                        <i class="fas fa-question-circle"></i>
-                                    </button>
-                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">
