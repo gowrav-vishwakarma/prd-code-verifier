@@ -159,9 +159,17 @@
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <h5><i class="fas fa-check-circle"></i> Verification Sections</h5>
-                                <button type="button" class="btn btn-primary" onclick="addVerificationSection()">
-                                    <i class="fas fa-plus"></i> Add Section
-                                </button>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="selectAllVerifications()">
+                                        <i class="fas fa-check-square"></i> Select All
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="deselectAllVerifications()">
+                                        <i class="fas fa-square"></i> Deselect All
+                                    </button>
+                                    <button type="button" class="btn btn-primary" onclick="addVerificationSection()">
+                                        <i class="fas fa-plus"></i> Add Section
+                                    </button>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <div id="verificationSections">
@@ -180,13 +188,14 @@
                                 <h5><i class="fas fa-play"></i> Run Verification</h5>
                             </div>
                             <div class="card-body">
-                                <div class="d-flex gap-2">
+                                <div class="d-flex gap-2 align-items-center">
                                     <button type="button" class="btn btn-success" onclick="runAllVerifications()">
                                         <i class="fas fa-play"></i> Run All Verifications
                                     </button>
                                     <button type="button" class="btn btn-warning" onclick="runSelectedVerifications()">
                                         <i class="fas fa-play-circle"></i> Run Selected
                                     </button>
+                                    <span class="text-muted" id="selectedCount">0 selected</span>
                                 </div>
                                 <div class="loading mt-3">
                                     <div class="spinner-border text-primary" role="status">
@@ -228,7 +237,12 @@
             const sectionHtml = `
                 <div class="verification-section" id="section-${verificationSectionCount}">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6>Verification Section ${verificationSectionCount + 1}</h6>
+                        <div class="form-check d-flex align-items-center">
+                            <input class="form-check-input me-2" type="checkbox" name="verificationCheckbox" value="${verificationSectionCount}" id="checkbox-${verificationSectionCount}">
+                            <label class="form-check-label" for="checkbox-${verificationSectionCount}">
+                                <h6 class="mb-0">Verification Section ${verificationSectionCount + 1}</h6>
+                            </label>
+                        </div>
                         <button type="button" class="btn btn-sm btn-danger" onclick="removeVerificationSection(${verificationSectionCount})">
                             <i class="fas fa-trash"></i>
                         </button>
@@ -242,9 +256,8 @@
                             <div class="mb-3">
                                 <label class="form-label">Documentation Files (one per line)</label>
                                 <textarea class="form-control" name="documentationFiles" rows="3" placeholder="/absolute/path/to/doc1.md&#10;/absolute/path/to/doc2.md"></textarea>
-                                <small class="form-text text-muted">Enter absolute file paths, one per line. Use the file picker below to select files - it will add the filenames to the list, then you can edit them to include the full paths.</small>
+                                <small class="form-text text-muted">Enter absolute file paths, one per line.</small>
                                 <div class="d-flex gap-2 mt-2">
-                                    <input type="file" class="form-control" name="documentationFilesPicker" multiple accept=".md,.txt,.pdf" onchange="updateFilePaths(this, 'documentationFiles')">
                                     <button type="button" class="btn btn-outline-info btn-sm" onclick="showPathHelp()" title="How to get file paths">
                                         <i class="fas fa-question-circle"></i>
                                     </button>
@@ -253,9 +266,8 @@
                             <div class="mb-3">
                                 <label class="form-label">Frontend Code Files (one per line)</label>
                                 <textarea class="form-control" name="frontendFiles" rows="3" placeholder="/absolute/path/to/frontend.js&#10;/absolute/path/to/component.jsx"></textarea>
-                                <small class="form-text text-muted">Enter absolute file paths, one per line. Use the file picker below to select files - it will add the filenames to the list, then you can edit them to include the full paths.</small>
+                                <small class="form-text text-muted">Enter absolute file paths, one per line.</small>
                                 <div class="d-flex gap-2 mt-2">
-                                    <input type="file" class="form-control" name="frontendFilesPicker" multiple accept=".js,.jsx,.ts,.tsx,.vue,.html,.css,.scss" onchange="updateFilePaths(this, 'frontendFiles')">
                                     <button type="button" class="btn btn-outline-info btn-sm" onclick="showPathHelp()" title="How to get file paths">
                                         <i class="fas fa-question-circle"></i>
                                     </button>
@@ -264,9 +276,8 @@
                             <div class="mb-3">
                                 <label class="form-label">Backend Code Files (one per line)</label>
                                 <textarea class="form-control" name="backendFiles" rows="3" placeholder="/absolute/path/to/backend.py&#10;/absolute/path/to/api.js"></textarea>
-                                <small class="form-text text-muted">Enter absolute file paths, one per line. Use the file picker below to select files - it will add the filenames to the list, then you can edit them to include the full paths.</small>
+                                <small class="form-text text-muted">Enter absolute file paths, one per line.</small>
                                 <div class="d-flex gap-2 mt-2">
-                                    <input type="file" class="form-control" name="backendFilesPicker" multiple accept=".py,.java,.cpp,.c,.cs,.go,.rs,.php,.rb" onchange="updateFilePaths(this, 'backendFiles')">
                                     <button type="button" class="btn btn-outline-info btn-sm" onclick="showPathHelp()" title="How to get file paths">
                                         <i class="fas fa-question-circle"></i>
                                     </button>
@@ -299,7 +310,15 @@
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', sectionHtml);
+            
+            // Add event listener to the new checkbox
+            const newCheckbox = document.getElementById(`checkbox-${verificationSectionCount}`);
+            if (newCheckbox) {
+                newCheckbox.addEventListener('change', updateSelectedCount);
+            }
+            
             verificationSectionCount++;
+            updateSelectedCount();
         }
 
         // Remove verification section
@@ -307,6 +326,35 @@
             const section = document.getElementById(`section-${index}`);
             if (section) {
                 section.remove();
+                updateSelectedCount();
+            }
+        }
+
+        // Select all verifications
+        function selectAllVerifications() {
+            const checkboxes = document.querySelectorAll('input[name="verificationCheckbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            updateSelectedCount();
+        }
+
+        // Deselect all verifications
+        function deselectAllVerifications() {
+            const checkboxes = document.querySelectorAll('input[name="verificationCheckbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            updateSelectedCount();
+        }
+
+        // Update selected count display
+        function updateSelectedCount() {
+            const selectedCount = document.querySelectorAll('input[name="verificationCheckbox"]:checked').length;
+            const totalCount = document.querySelectorAll('input[name="verificationCheckbox"]').length;
+            const countElement = document.getElementById('selectedCount');
+            if (countElement) {
+                countElement.textContent = `${selectedCount} of ${totalCount} selected`;
             }
         }
 
@@ -337,27 +385,6 @@
             }
         }
 
-        // Update file paths from file picker
-        function updateFilePaths(fileInput, targetTextareaName) {
-            const files = Array.from(fileInput.files);
-            const paths = files.map(file => {
-                // In a web browser, we can't get the full path, so we'll show the filename
-                // Users can then edit it to add the full path
-                return file.name;
-            });
-            
-            const textarea = fileInput.closest('.verification-section').querySelector(`textarea[name="${targetTextareaName}"]`);
-            const currentPaths = textarea.value.split('\n').filter(path => path.trim());
-            const allPaths = [...currentPaths, ...paths];
-            textarea.value = allPaths.join('\n');
-            
-            // Focus on the textarea so user can edit the paths
-            if (paths.length > 0) {
-                textarea.focus();
-                // Show a subtle notification instead of an alert
-                showNotification(`Added ${paths.length} file(s) to the list. Please edit the paths above to include the full absolute paths.`, 'info');
-            }
-        }
 
         // Show notification instead of alert
         function showNotification(message, type = 'info') {
@@ -385,8 +412,7 @@
             const helpMessage = `
                 <h6>How to get file paths:</h6>
                 <ol>
-                    <li><strong>Use the file picker</strong> to select your files</li>
-                    <li><strong>Edit the textarea</strong> to add the full absolute paths</li>
+                    <li><strong>Enter absolute file paths</strong> in the textarea, one per line</li>
                     <li><strong>Common ways to get paths:</strong>
                         <ul>
                             <li>Right-click file in file manager → "Copy path"</li>
@@ -396,7 +422,7 @@
                         </ul>
                     </li>
                 </ol>
-                <p><strong>Example:</strong> If you select "README.md", edit it to: <code>/home/user/project/README.md</code></p>
+                <p><strong>Example:</strong> <code>/home/user/project/README.md</code></p>
             `;
             
             showNotification(helpMessage, 'info');
@@ -460,9 +486,15 @@
                         lastSection.querySelector('textarea[name="documentationFiles"]').value = (section.documentation_files || []).join('\n');
                         lastSection.querySelector('textarea[name="frontendFiles"]').value = (section.frontend_code_files || []).join('\n');
                         lastSection.querySelector('textarea[name="backendFiles"]').value = (section.backend_code_files || []).join('\n');
+                        
+                        // Check the checkbox by default when loading a project
+                        const checkbox = lastSection.querySelector('input[name="verificationCheckbox"]');
+                        checkbox.checked = true;
+                        checkbox.addEventListener('change', updateSelectedCount);
                     }
                 });
             }
+            updateSelectedCount();
         }
 
         // Save project
@@ -532,8 +564,32 @@
 
         // Run selected verifications
         async function runSelectedVerifications() {
-            // For now, run all - in a real implementation, you'd have checkboxes to select specific ones
-            await runVerifications(null);
+            const selectedCheckboxes = document.querySelectorAll('input[name="verificationCheckbox"]:checked');
+            const selectedIndices = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
+            
+            if (selectedIndices.length === 0) {
+                showNotification('Please select at least one verification to run.', 'warning');
+                return;
+            }
+            
+            // Get verification names for selected sections
+            const selectedNames = [];
+            selectedIndices.forEach(index => {
+                const section = document.getElementById(`section-${index}`);
+                if (section) {
+                    const nameInput = section.querySelector('input[name="verificationName"]');
+                    if (nameInput && nameInput.value.trim()) {
+                        selectedNames.push(nameInput.value.trim());
+                    }
+                }
+            });
+            
+            if (selectedNames.length === 0) {
+                showNotification('Please ensure selected verifications have names.', 'warning');
+                return;
+            }
+            
+            await runVerifications(selectedNames);
         }
 
         // Run verifications
