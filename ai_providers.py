@@ -132,6 +132,7 @@ class OllamaProvider(BaseAIProvider):
     
     def __init__(self, config: AIProviderConfig):
         super().__init__(config)
+        # Ollama client uses 'host' parameter, not 'base_url'
         self.client = ollama.AsyncClient(host=config.base_url or "http://localhost:11434")
     
     async def generate_response(self, prompt: str) -> str:
@@ -145,7 +146,7 @@ class OllamaProvider(BaseAIProvider):
                     "num_predict": self.config.max_tokens
                 }
             )
-            return response["response"]
+            return response.response
         except Exception as e:
             raise Exception(f"Ollama error: {str(e)}")
     
@@ -177,8 +178,8 @@ class OllamaProvider(BaseAIProvider):
                 })
             
             async for chunk in stream:
-                if chunk["response"]:
-                    content = chunk["response"]
+                if chunk.response:
+                    content = chunk.response
                     response_text += content
                     
                     # Emit streaming content event

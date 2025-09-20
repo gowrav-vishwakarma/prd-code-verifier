@@ -605,30 +605,38 @@
             const modelField = document.getElementById('aiModel');
             const baseUrlField = document.getElementById('aiBaseUrl');
             
-            // Set default models and URLs based on provider (only if forceDefaults is true or field is empty)
+            // Set default models and URLs based on provider
             switch(provider) {
                 case 'openai':
                     if (forceDefaults || !modelField.value) {
                         modelField.value = 'gpt-3.5-turbo';
                     }
+                    // Always update base URL when provider changes
+                    baseUrlField.value = 'https://api.openai.com/v1';
                     baseUrlField.placeholder = 'https://api.openai.com/v1';
                     break;
                 case 'gemini':
                     if (forceDefaults || !modelField.value) {
                         modelField.value = 'gemini-pro';
                     }
+                    // Always update base URL when provider changes
+                    baseUrlField.value = 'https://generativelanguage.googleapis.com';
                     baseUrlField.placeholder = 'https://generativelanguage.googleapis.com';
                     break;
                 case 'ollama':
                     if (forceDefaults || !modelField.value) {
-                        modelField.value = 'llama2';
+                        modelField.value = 'qwen3-4b-128k';
                     }
+                    // Always update base URL when provider changes
+                    baseUrlField.value = 'http://localhost:11434';
                     baseUrlField.placeholder = 'http://localhost:11434';
                     break;
                 case 'lm_studio':
                     if (forceDefaults || !modelField.value) {
                         modelField.value = 'local-model';
                     }
+                    // Always update base URL when provider changes
+                    baseUrlField.value = 'http://localhost:1234/v1';
                     baseUrlField.placeholder = 'http://localhost:1234/v1';
                     break;
             }
@@ -726,10 +734,27 @@
                 document.getElementById('aiProvider').value = projectData.ai_config.provider || 'openai';
                 updateAIProviderConfig(); // This will only set placeholders, not override values
                 
-                // Now set the actual values from the project
+                // Now set the actual values from the project, but validate base URL
                 document.getElementById('aiModel').value = projectData.ai_config.model || 'gpt-3.5-turbo';
                 document.getElementById('aiApiKey').value = projectData.ai_config.api_key || '';
-                document.getElementById('aiBaseUrl').value = projectData.ai_config.base_url || '';
+                
+                // Validate and correct base URL based on provider
+                const provider = projectData.ai_config.provider || 'openai';
+                const savedBaseUrl = projectData.ai_config.base_url || '';
+                let correctedBaseUrl = savedBaseUrl;
+                
+                // Correct base URL if it doesn't match the provider
+                if (provider === 'ollama' && !savedBaseUrl.includes('localhost:11434')) {
+                    correctedBaseUrl = 'http://localhost:11434';
+                } else if (provider === 'lm_studio' && !savedBaseUrl.includes('localhost:1234')) {
+                    correctedBaseUrl = 'http://localhost:1234/v1';
+                } else if (provider === 'openai' && !savedBaseUrl.includes('api.openai.com')) {
+                    correctedBaseUrl = 'https://api.openai.com/v1';
+                } else if (provider === 'gemini' && !savedBaseUrl.includes('generativelanguage.googleapis.com')) {
+                    correctedBaseUrl = 'https://generativelanguage.googleapis.com';
+                }
+                
+                document.getElementById('aiBaseUrl').value = correctedBaseUrl;
                 document.getElementById('aiTag').value = projectData.ai_config.tag || '';
             }
 
@@ -1576,6 +1601,9 @@
                     document.getElementById('aiModel').value = config.model;
                     document.getElementById('aiBaseUrl').value = config.base_url || '';
                     document.getElementById('aiApiKey').value = config.api_key || '';
+                    
+                    // Update provider-specific defaults to ensure correct values are set
+                    updateAIProviderConfig(true);
                 }
             } catch (error) {
                 console.error('Error loading default AI config:', error);
@@ -1614,8 +1642,13 @@
                     model: document.getElementById('aiModel').value,
                     base_url: document.getElementById('aiBaseUrl').value || null,
                     api_key: document.getElementById('aiApiKey').value || null,
-                    tag: document.getElementById('aiTag').value || null
+                    tag: document.getElementById('aiTag').value || null,
+                    temperature: 0.7,
+                    max_tokens: null
                 };
+                
+                // Debug: Log the config being sent
+                console.log('Testing AI connection with config:', aiConfig);
                 
                 const response = await fetch('/api/ai/test-connection', {
                     method: 'POST',
@@ -1624,7 +1657,20 @@
                     },
                     body: JSON.stringify(aiConfig)
                 });
-                const result = await response.json();
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                let result;
+                try {
+                    result = await response.json();
+                    console.log('AI connection test result:', result);
+                } catch (parseError) {
+                    console.error('Failed to parse response as JSON:', parseError);
+                    const textResponse = await response.text();
+                    console.error('Raw response:', textResponse);
+                    throw new Error('Failed to parse server response: ' + parseError.message);
+                }
                 
                 if (result.status === 'success') {
                     statusDiv.innerHTML = `
