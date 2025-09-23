@@ -1,0 +1,47 @@
+{
+  "project_name": "Example PRD Verification",
+  "output_folder": "./reports",
+  "documentation_root_path": "/path/to/project/docs",
+  "frontend_project_path": "/path/to/project/frontend",
+  "backend_project_path": "/path/to/project/backend",
+  "global_system_prompt": "You are an expert software engineer and technical reviewer. Your task is to analyze code implementations against their documentation and requirements to ensure they match perfectly.",
+  "global_instructions": "Please provide a detailed analysis of the code against the documentation. Include:\n1. Compliance check - does the code implement what's described in the docs?\n2. Missing features - what's documented but not implemented?\n3. Extra features - what's implemented but not documented?\n4. Code quality assessment\n5. Recommendations for improvement",
+  "verification_sections": [
+    {
+      "name": "API Endpoints Verification",
+      "documentation_files": [
+        "api-spec.md",
+        "endpoints.md"
+      ],
+      "frontend_code_files": [
+        "src/api/client.js",
+        "src/components/UserList.jsx"
+      ],
+      "backend_code_files": [
+        "api/routes/users.py",
+        "api/models/User.py"
+      ],
+      "override_global_system_prompt": false,
+      "override_global_instructions": false,
+      "verification_system_prompt": null,
+      "verification_instructions": null
+    },
+    {
+      "name": "Database Schema Verification",
+      "documentation_files": [
+        "database-schema.md",
+        "migrations/README.md"
+      ],
+      "frontend_code_files": [],
+      "backend_code_files": [
+        "models/User.py",
+        "models/Product.py",
+        "migrations/001_initial.py"
+      ],
+      "override_global_system_prompt": false,
+      "override_global_instructions": false,
+      "verification_system_prompt": null,
+      "verification_instructions": null
+    }
+  ]
+}

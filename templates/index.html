@@ -1,0 +1,1771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRD Code Verifier</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+    <style>
+        .verification-section {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f8f9fa;
+        }
+        .file-input-group {
+            margin-bottom: 10px;
+        }
+        .ai-config-section {
+            background-color: #e3f2fd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .loading {
+            display: none;
+        }
+        .result-section {
+            display: none;
+        }
+        
+        /* Markdown preview styling */
+        .streaming-content-preview h1,
+        .streaming-content-preview h2,
+        .streaming-content-preview h3,
+        .streaming-content-preview h4,
+        .streaming-content-preview h5,
+        .streaming-content-preview h6 {
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .streaming-content-preview h1 {
+            font-size: 1.5rem;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 0.3rem;
+        }
+        
+        .streaming-content-preview h2 {
+            font-size: 1.3rem;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 0.2rem;
+        }
+        
+        .streaming-content-preview p {
+            margin-bottom: 0.8rem;
+            line-height: 1.5;
+        }
+        
+        .streaming-content-preview code {
+            background-color: #f8f9fa;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            color: #e83e8c;
+        }
+        
+        .streaming-content-preview pre {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+        
+        .streaming-content-preview pre code {
+            background-color: transparent;
+            padding: 0;
+            color: #212529;
+        }
+        
+        .streaming-content-preview ul,
+        .streaming-content-preview ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+        
+        .streaming-content-preview li {
+            margin-bottom: 0.25rem;
+        }
+        
+        .streaming-content-preview blockquote {
+            border-left: 4px solid #007bff;
+            padding-left: 1rem;
+            margin: 1rem 0;
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        .streaming-content-preview table {
+            width: 100%;
+            margin-bottom: 1rem;
+            border-collapse: collapse;
+        }
+        
+        .streaming-content-preview th,
+        .streaming-content-preview td {
+            padding: 0.5rem;
+            border: 1px solid #dee2e6;
+            text-align: left;
+        }
+        
+        .streaming-content-preview th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .streaming-content-preview hr {
+            border: none;
+            border-top: 1px solid #dee2e6;
+            margin: 1.5rem 0;
+        }
+        
+        /* Report content styling (for results section) */
+        .report-content-preview h1,
+        .report-content-preview h2,
+        .report-content-preview h3,
+        .report-content-preview h4,
+        .report-content-preview h5,
+        .report-content-preview h6 {
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .report-content-preview h1 {
+            font-size: 1.5rem;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 0.3rem;
+        }
+        
+        .report-content-preview h2 {
+            font-size: 1.3rem;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 0.2rem;
+        }
+        
+        .report-content-preview p {
+            margin-bottom: 0.8rem;
+            line-height: 1.5;
+        }
+        
+        .report-content-preview code {
+            background-color: #f8f9fa;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            color: #e83e8c;
+        }
+        
+        .report-content-preview pre {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+        
+        .report-content-preview pre code {
+            background-color: transparent;
+            padding: 0;
+            color: #212529;
+        }
+        
+        .report-content-preview ul,
+        .report-content-preview ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+        
+        .report-content-preview li {
+            margin-bottom: 0.25rem;
+        }
+        
+        .report-content-preview blockquote {
+            border-left: 4px solid #007bff;
+            padding-left: 1rem;
+            margin: 1rem 0;
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        .report-content-preview table {
+            width: 100%;
+            margin-bottom: 1rem;
+            border-collapse: collapse;
+        }
+        
+        .report-content-preview th,
+        .report-content-preview td {
+            padding: 0.5rem;
+            border: 1px solid #dee2e6;
+            text-align: left;
+        }
+        
+        .report-content-preview th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .report-content-preview hr {
+            border: none;
+            border-top: 1px solid #dee2e6;
+            margin: 1.5rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+                    <div class="container-fluid">
+                        <a class="navbar-brand" href="#">
+                            <i class="fas fa-code-branch"></i> PRD Code Verifier
+                        </a>
+                    </div>
+                </nav>
+            </div>
+        </div>
+
+        <div class="container mt-4">
+            <!-- Project Management Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-project-diagram"></i> Project Management</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <button class="btn btn-outline-primary" onclick="loadProject()">
+                                        <i class="fas fa-folder-open"></i> Load Project
+                                    </button>
+                                    <input type="file" id="projectFile" accept=".json" style="display: none;" onchange="handleProjectLoad(event)">
+                                </div>
+                                <div class="col-md-6">
+                                    <button class="btn btn-success" onclick="saveProject()">
+                                        <i class="fas fa-save"></i> Save Project
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Form -->
+            <form id="mainForm">
+                <!-- Project Configuration -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#projectConfigCollapse" aria-expanded="false" aria-controls="projectConfigCollapse">
+                                <h5><i class="fas fa-cog"></i> Project Configuration <i class="fas fa-chevron-down float-end" id="projectConfigChevron"></i></h5>
+                            </div>
+                            <div class="collapse" id="projectConfigCollapse">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="projectName" class="form-label">Project Name</label>
+                                                <input type="text" class="form-control" id="projectName" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="outputFolder" class="form-label">Output Folder</label>
+                                                <input type="text" class="form-control" id="outputFolder" placeholder="/path/to/output" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="documentationRootPath" class="form-label">Documentation Root Path</label>
+                                                <input type="text" class="form-control" id="documentationRootPath" placeholder="/path/to/docs" title="Root directory for all documentation files">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="frontendProjectPath" class="form-label">Frontend Project Path</label>
+                                                <input type="text" class="form-control" id="frontendProjectPath" placeholder="/path/to/frontend" title="Root directory for all frontend code files">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="backendProjectPath" class="form-label">Backend Project Path</label>
+                                                <input type="text" class="form-control" id="backendProjectPath" placeholder="/path/to/backend" title="Root directory for all backend code files">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <!-- Empty column for better layout -->
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Full-width text areas -->
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="mb-3">
+                                                <label for="globalSystemPrompt" class="form-label">Global System Prompt</label>
+                                                <textarea class="form-control" id="globalSystemPrompt" rows="6" placeholder="Enter global system prompt..."></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="mb-3">
+                                                <label for="globalInstructions" class="form-label">Global Instructions</label>
+                                                <textarea class="form-control" id="globalInstructions" rows="6" placeholder="Enter global instructions..."></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Configuration -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-robot"></i> AI Configuration</h5>
+                            </div>
+                            <div class="card-body ai-config-section">
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <div class="mb-3">
+                                            <label for="aiProvider" class="form-label">AI Provider</label>
+                                            <select class="form-select" id="aiProvider" onchange="updateAIProviderConfig()">
+                                                <option value="openai">OpenAI</option>
+                                                <option value="gemini">Google Gemini</option>
+                                                <option value="ollama">Ollama</option>
+                                                <option value="lm_studio">LM Studio</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="mb-3">
+                                            <label for="aiModel" class="form-label">Model</label>
+                                            <input type="text" class="form-control" id="aiModel" value="gpt-3.5-turbo">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="mb-3">
+                                            <label for="aiTag" class="form-label">Tag (Optional)</label>
+                                            <input type="text" class="form-control" id="aiTag" placeholder="e.g., v1.0, test, prod">
+                                            <small class="form-text text-muted">Used for folder organization</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="aiApiKey" class="form-label">API Key</label>
+                                            <input type="password" class="form-control" id="aiApiKey" placeholder="Enter API key">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="aiBaseUrl" class="form-label">Base URL (Optional)</label>
+                                            <input type="text" class="form-control" id="aiBaseUrl" placeholder="Custom endpoint URL">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <button type="button" class="btn btn-outline-info" onclick="testAIConnection()">
+                                            <i class="fas fa-plug"></i> Test AI Connection
+                                        </button>
+                                        <div id="connectionStatus" class="mt-2"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Verification Sections -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5><i class="fas fa-check-circle"></i> Verification Sections</h5>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-outline-info btn-sm" onclick="showPathHelp()" title="How to get file paths">
+                                        <i class="fas fa-question-circle"></i> File Path Help
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="selectAllVerifications()">
+                                        <i class="fas fa-check-square"></i> Select All
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="deselectAllVerifications()">
+                                        <i class="fas fa-square"></i> Deselect All
+                                    </button>
+                                    <button type="button" class="btn btn-primary" onclick="addVerificationSection()">
+                                        <i class="fas fa-plus"></i> Add Section
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>File Paths:</strong> Enter relative file paths (one per line) in the textareas below. 
+                                    These will be combined with the root paths set above. Click "File Path Help" for guidance.
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                                <div id="verificationSections">
+                                    <!-- Verification sections will be added here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Run Verification -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-play"></i> Run Verification</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex gap-2 align-items-center">
+                                    <button type="button" class="btn btn-success" onclick="runAllVerifications()">
+                                        <i class="fas fa-play"></i> Run All Verifications
+                                    </button>
+                                    <button type="button" class="btn btn-warning" onclick="runSelectedVerifications()">
+                                        <i class="fas fa-play-circle"></i> Run Selected
+                                    </button>
+                                    <span class="text-muted" id="selectedCount">0 selected</span>
+                                </div>
+                                <div class="loading mt-3">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Running verification...</span>
+                                    </div>
+                                    <span class="ms-2">Running verification...</span>
+                                </div>
+                                <div id="progressContent" class="mt-3" style="display: none;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Results Section -->
+            <div class="row result-section">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-chart-bar"></i> Verification Results</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="resultsContent">
+                                <!-- Results will be displayed here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let verificationSectionCount = 0;
+
+        // Add verification section
+        function addVerificationSection() {
+            const container = document.getElementById('verificationSections');
+            const sectionHtml = `
+                <div class="verification-section" id="section-${verificationSectionCount}">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="form-check d-flex align-items-center">
+                            <input class="form-check-input me-2" type="checkbox" name="verificationCheckbox" value="${verificationSectionCount}" id="checkbox-${verificationSectionCount}">
+                            <label class="form-check-label" for="checkbox-${verificationSectionCount}">
+                                <h6 class="mb-0">Verification Section ${verificationSectionCount + 1}</h6>
+                            </label>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeVerificationSection(${verificationSectionCount})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Verification Name</label>
+                                <input type="text" class="form-control" name="verificationName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Documentation Files (one per line)</label>
+                                <textarea class="form-control" name="documentationFiles" rows="3" placeholder="docs/README.md&#10;docs/api.md&#10;docs/architecture.md"></textarea>
+                                <small class="form-text text-muted">Enter relative file paths, one per line.</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Frontend Code Files (one per line)</label>
+                                <textarea class="form-control" name="frontendFiles" rows="3" placeholder="src/components/Button.jsx&#10;src/pages/Home.jsx&#10;src/utils/helpers.js"></textarea>
+                                <small class="form-text text-muted">Enter relative file paths, one per line.</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Backend Code Files (one per line)</label>
+                                <textarea class="form-control" name="backendFiles" rows="3" placeholder="api/routes/users.py&#10;api/models/User.py&#10;api/utils/database.py"></textarea>
+                                <small class="form-text text-muted">Enter relative file paths, one per line.</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">System Prompt Mode</label>
+                                <div class="btn-group" role="group" data-toggle="buttons">
+                                    <input type="radio" class="btn-check" name="systemPromptMode-${verificationSectionCount}" id="useGlobalSystem-${verificationSectionCount}" value="use_global" checked>
+                                    <label class="btn btn-outline-primary btn-sm" for="useGlobalSystem-${verificationSectionCount}">Use Global</label>
+                                    
+                                    <input type="radio" class="btn-check" name="systemPromptMode-${verificationSectionCount}" id="overrideSystem-${verificationSectionCount}" value="override">
+                                    <label class="btn btn-outline-warning btn-sm" for="overrideSystem-${verificationSectionCount}">Override</label>
+                                    
+                                    <input type="radio" class="btn-check" name="systemPromptMode-${verificationSectionCount}" id="appendSystem-${verificationSectionCount}" value="append">
+                                    <label class="btn btn-outline-info btn-sm" for="appendSystem-${verificationSectionCount}">Append</label>
+                                </div>
+                                <div><small class="form-text text-muted">Use Global: Use only global system prompt<br>Override: Use only local system prompt<br>Append: Combine global + local prompts</small></div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Verification System Prompt</label>
+                                <textarea class="form-control" name="verificationSystemPrompt" rows="2" placeholder="Enter local system prompt for this verification"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Instructions Mode</label>
+                                <div class="btn-group" role="group" data-toggle="buttons">
+                                    <input type="radio" class="btn-check" name="instructionsMode-${verificationSectionCount}" id="useGlobalInstructions-${verificationSectionCount}" value="use_global" checked>
+                                    <label class="btn btn-outline-primary btn-sm" for="useGlobalInstructions-${verificationSectionCount}">Use Global</label>
+                                    
+                                    <input type="radio" class="btn-check" name="instructionsMode-${verificationSectionCount}" id="overrideInstructions-${verificationSectionCount}" value="override">
+                                    <label class="btn btn-outline-warning btn-sm" for="overrideInstructions-${verificationSectionCount}">Override</label>
+                                    
+                                    <input type="radio" class="btn-check" name="instructionsMode-${verificationSectionCount}" id="appendInstructions-${verificationSectionCount}" value="append">
+                                    <label class="btn btn-outline-info btn-sm" for="appendInstructions-${verificationSectionCount}">Append</label>
+                                </div>
+                                <div><small class="form-text text-muted">Use Global: Use only global instructions<br>Override: Use only local instructions<br>Append: Combine global + local instructions</small></div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Verification Instructions</label>
+                                <textarea class="form-control" name="verificationInstructions" rows="2" placeholder="Enter local instructions for this verification"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', sectionHtml);
+            
+            // Add event listener to the new checkbox
+            const newCheckbox = document.getElementById(`checkbox-${verificationSectionCount}`);
+            if (newCheckbox) {
+                newCheckbox.addEventListener('change', updateSelectedCount);
+            }
+            
+            verificationSectionCount++;
+            updateSelectedCount();
+        }
+
+        // Remove verification section
+        function removeVerificationSection(index) {
+            const section = document.getElementById(`section-${index}`);
+            if (section) {
+                section.remove();
+                updateSelectedCount();
+            }
+        }
+
+        // Select all verifications
+        function selectAllVerifications() {
+            const checkboxes = document.querySelectorAll('input[name="verificationCheckbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            updateSelectedCount();
+        }
+
+        // Deselect all verifications
+        function deselectAllVerifications() {
+            const checkboxes = document.querySelectorAll('input[name="verificationCheckbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            updateSelectedCount();
+        }
+
+        // Update selected count display
+        function updateSelectedCount() {
+            const selectedCount = document.querySelectorAll('input[name="verificationCheckbox"]:checked').length;
+            const totalCount = document.querySelectorAll('input[name="verificationCheckbox"]').length;
+            const countElement = document.getElementById('selectedCount');
+            if (countElement) {
+                countElement.textContent = `${selectedCount} of ${totalCount} selected`;
+            }
+        }
+
+        // Update AI provider configuration
+        function updateAIProviderConfig(forceDefaults = false) {
+            const provider = document.getElementById('aiProvider').value;
+            const modelField = document.getElementById('aiModel');
+            const baseUrlField = document.getElementById('aiBaseUrl');
+            
+            // Set default models and URLs based on provider
+            switch(provider) {
+                case 'openai':
+                    if (forceDefaults || !modelField.value) {
+                        modelField.value = 'gpt-3.5-turbo';
+                    }
+                    // Always update base URL when provider changes
+                    baseUrlField.value = 'https://api.openai.com/v1';
+                    baseUrlField.placeholder = 'https://api.openai.com/v1';
+                    break;
+                case 'gemini':
+                    if (forceDefaults || !modelField.value) {
+                        modelField.value = 'gemini-pro';
+                    }
+                    // Always update base URL when provider changes
+                    baseUrlField.value = 'https://generativelanguage.googleapis.com';
+                    baseUrlField.placeholder = 'https://generativelanguage.googleapis.com';
+                    break;
+                case 'ollama':
+                    if (forceDefaults || !modelField.value) {
+                        modelField.value = 'qwen3-4b-128k';
+                    }
+                    // Always update base URL when provider changes
+                    baseUrlField.value = 'http://localhost:11434';
+                    baseUrlField.placeholder = 'http://localhost:11434';
+                    break;
+                case 'lm_studio':
+                    if (forceDefaults || !modelField.value) {
+                        modelField.value = 'local-model';
+                    }
+                    // Always update base URL when provider changes
+                    baseUrlField.value = 'http://localhost:1234/v1';
+                    baseUrlField.placeholder = 'http://localhost:1234/v1';
+                    break;
+            }
+        }
+
+
+        // Show notification instead of alert
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'info' ? 'primary' : type} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // Show help for getting file paths
+        function showPathHelp() {
+            const helpMessage = `
+                <h6>How to get relative file paths:</h6>
+                <ol>
+                    <li><strong>Enter relative file paths</strong> in the textarea, one per line</li>
+                    <li><strong>Common ways to get relative paths:</strong>
+                        <ul>
+                            <li><strong>VS Code/Cursor:</strong> Right-click file → "Copy Relative Path"</li>
+                            <li><strong>File Explorer:</strong> Right-click file → "Copy as path" then remove root part</li>
+                            <li><strong>Terminal:</strong> Use <code>find . -name "filename"</code> from project root</li>
+                            <li><strong>Manual:</strong> Path relative to the root paths set above</li>
+                        </ul>
+                    </li>
+                </ol>
+                <p><strong>Examples:</strong><br>
+                Documentation: <code>docs/README.md</code><br>
+                Frontend: <code>src/components/Button.jsx</code><br>
+                Backend: <code>api/routes/users.py</code></p>
+            `;
+            
+            showNotification(helpMessage, 'info');
+        }
+
+        // Load project
+        function loadProject() {
+            document.getElementById('projectFile').click();
+        }
+
+        // Handle project file load
+        async function handleProjectLoad(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/projects/load', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const projectData = await response.json();
+                    populateForm(projectData);
+                } else {
+                    alert('Error loading project file');
+                }
+            } catch (error) {
+                alert('Error loading project: ' + error.message);
+            }
+        }
+
+        // Populate form with project data
+        function populateForm(projectData) {
+            document.getElementById('projectName').value = projectData.project_name || '';
+            document.getElementById('outputFolder').value = projectData.output_folder || '';
+            document.getElementById('documentationRootPath').value = projectData.documentation_root_path || '';
+            document.getElementById('frontendProjectPath').value = projectData.frontend_project_path || '';
+            document.getElementById('backendProjectPath').value = projectData.backend_project_path || '';
+            document.getElementById('globalSystemPrompt').value = projectData.global_system_prompt || '';
+            document.getElementById('globalInstructions').value = projectData.global_instructions || '';
+
+            // Populate AI configuration
+            if (projectData.ai_config) {
+                // Set provider first, then update UI (this sets placeholders only)
+                document.getElementById('aiProvider').value = projectData.ai_config.provider || 'openai';
+                updateAIProviderConfig(); // This will only set placeholders, not override values
+                
+                // Now set the actual values from the project, but validate base URL
+                document.getElementById('aiModel').value = projectData.ai_config.model || 'gpt-3.5-turbo';
+                document.getElementById('aiApiKey').value = projectData.ai_config.api_key || '';
+                
+                // Validate and correct base URL based on provider
+                const provider = projectData.ai_config.provider || 'openai';
+                const savedBaseUrl = projectData.ai_config.base_url || '';
+                let correctedBaseUrl = savedBaseUrl;
+                
+                // Correct base URL if it doesn't match the provider
+                if (provider === 'ollama' && !savedBaseUrl.includes('localhost:11434')) {
+                    correctedBaseUrl = 'http://localhost:11434';
+                } else if (provider === 'lm_studio' && !savedBaseUrl.includes('localhost:1234')) {
+                    correctedBaseUrl = 'http://localhost:1234/v1';
+                } else if (provider === 'openai' && !savedBaseUrl.includes('api.openai.com')) {
+                    correctedBaseUrl = 'https://api.openai.com/v1';
+                } else if (provider === 'gemini' && !savedBaseUrl.includes('generativelanguage.googleapis.com')) {
+                    correctedBaseUrl = 'https://generativelanguage.googleapis.com';
+                }
+                
+                document.getElementById('aiBaseUrl').value = correctedBaseUrl;
+                document.getElementById('aiTag').value = projectData.ai_config.tag || '';
+            }
+
+            // Clear existing sections
+            document.getElementById('verificationSections').innerHTML = '';
+            verificationSectionCount = 0;
+
+            // Add verification sections
+            if (projectData.verification_sections) {
+                projectData.verification_sections.forEach(section => {
+                    addVerificationSection();
+                    // Populate the last added section
+                    const lastSection = document.querySelector(`#section-${verificationSectionCount - 1}`);
+                    if (lastSection) {
+                        lastSection.querySelector('input[name="verificationName"]').value = section.name || '';
+                        lastSection.querySelector('textarea[name="verificationSystemPrompt"]').value = section.verification_system_prompt || '';
+                        lastSection.querySelector('textarea[name="verificationInstructions"]').value = section.verification_instructions || '';
+                        // Handle system prompt mode
+                        const systemPromptMode = section.system_prompt_mode || (section.override_global_system_prompt ? 'override' : 'use_global');
+                        const systemPromptRadio = lastSection.querySelector(`input[name="systemPromptMode-${verificationSectionCount - 1}"][value="${systemPromptMode}"]`);
+                        if (systemPromptRadio) systemPromptRadio.checked = true;
+                        
+                        // Handle instructions mode
+                        const instructionsMode = section.instructions_mode || (section.override_global_instructions ? 'override' : 'use_global');
+                        const instructionsRadio = lastSection.querySelector(`input[name="instructionsMode-${verificationSectionCount - 1}"][value="${instructionsMode}"]`);
+                        if (instructionsRadio) instructionsRadio.checked = true;
+                        
+                        // Populate file paths
+                        lastSection.querySelector('textarea[name="documentationFiles"]').value = (section.documentation_files || []).join('\n');
+                        lastSection.querySelector('textarea[name="frontendFiles"]').value = (section.frontend_code_files || []).join('\n');
+                        lastSection.querySelector('textarea[name="backendFiles"]').value = (section.backend_code_files || []).join('\n');
+                        
+                        // Check the checkbox by default when loading a project
+                        const checkbox = lastSection.querySelector('input[name="verificationCheckbox"]');
+                        checkbox.checked = true;
+                        checkbox.addEventListener('change', updateSelectedCount);
+                    }
+                });
+            }
+            updateSelectedCount();
+        }
+
+        // Save project
+        async function saveProject() {
+            const formData = new FormData();
+            formData.append('project_name', document.getElementById('projectName').value);
+            formData.append('output_folder', document.getElementById('outputFolder').value);
+            formData.append('documentation_root_path', document.getElementById('documentationRootPath').value);
+            formData.append('frontend_project_path', document.getElementById('frontendProjectPath').value);
+            formData.append('backend_project_path', document.getElementById('backendProjectPath').value);
+            formData.append('global_system_prompt', document.getElementById('globalSystemPrompt').value);
+            formData.append('global_instructions', document.getElementById('globalInstructions').value);
+            
+            // Collect verification sections
+            const sections = [];
+            const sectionElements = document.querySelectorAll('.verification-section');
+            sectionElements.forEach(section => {
+                // Parse file paths from textareas
+                const docFiles = section.querySelector('textarea[name="documentationFiles"]').value
+                    .split('\n')
+                    .map(path => path.trim())
+                    .filter(path => path.length > 0);
+                
+                const frontendFiles = section.querySelector('textarea[name="frontendFiles"]').value
+                    .split('\n')
+                    .map(path => path.trim())
+                    .filter(path => path.length > 0);
+                
+                const backendFiles = section.querySelector('textarea[name="backendFiles"]').value
+                    .split('\n')
+                    .map(path => path.trim())
+                    .filter(path => path.length > 0);
+                
+                // Get selected radio button values
+                const systemPromptMode = section.querySelector('input[name^="systemPromptMode-"]:checked')?.value || 'use_global';
+                const instructionsMode = section.querySelector('input[name^="instructionsMode-"]:checked')?.value || 'use_global';
+                
+                const sectionData = {
+                    name: section.querySelector('input[name="verificationName"]').value,
+                    documentation_files: docFiles,
+                    frontend_code_files: frontendFiles,
+                    backend_code_files: backendFiles,
+                    system_prompt_mode: systemPromptMode,
+                    instructions_mode: instructionsMode,
+                    verification_system_prompt: section.querySelector('textarea[name="verificationSystemPrompt"]').value,
+                    verification_instructions: section.querySelector('textarea[name="verificationInstructions"]').value
+                };
+                sections.push(sectionData);
+            });
+            
+            formData.append('verification_data', JSON.stringify(sections));
+            
+            // Collect AI configuration
+            const aiConfig = {
+                provider: document.getElementById('aiProvider').value,
+                model: document.getElementById('aiModel').value,
+                api_key: document.getElementById('aiApiKey').value,
+                base_url: document.getElementById('aiBaseUrl').value,
+                tag: document.getElementById('aiTag').value,
+                temperature: 0.7, // Default temperature
+                max_tokens: null // Default max tokens
+            };
+            formData.append('ai_config_data', JSON.stringify(aiConfig));
+
+            try {
+                const response = await fetch('/api/projects/save', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    alert('Project saved successfully as: ' + result.filename);
+                } else {
+                    alert('Error saving project');
+                }
+            } catch (error) {
+                alert('Error saving project: ' + error.message);
+            }
+        }
+
+        // Run all verifications
+        async function runAllVerifications() {
+            await runVerifications(null);
+        }
+
+        // Run selected verifications
+        async function runSelectedVerifications() {
+            const selectedCheckboxes = document.querySelectorAll('input[name="verificationCheckbox"]:checked');
+            const selectedIndices = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
+            
+            if (selectedIndices.length === 0) {
+                showNotification('Please select at least one verification to run.', 'warning');
+                return;
+            }
+            
+            // Get verification names for selected sections
+            const selectedNames = [];
+            selectedIndices.forEach(index => {
+                const section = document.getElementById(`section-${index}`);
+                if (section) {
+                    const nameInput = section.querySelector('input[name="verificationName"]');
+                    if (nameInput && nameInput.value.trim()) {
+                        selectedNames.push(nameInput.value.trim());
+                    }
+                }
+            });
+            
+            if (selectedNames.length === 0) {
+                showNotification('Please ensure selected verifications have names.', 'warning');
+                return;
+            }
+            
+            await runVerifications(selectedNames);
+        }
+
+        // Run verifications with streaming progress
+        async function runVerifications(verificationNames) {
+            const loadingDiv = document.querySelector('.loading');
+            const resultDiv = document.querySelector('.result-section');
+            const progressDiv = document.getElementById('progressContent');
+            const resultsContent = document.getElementById('resultsContent');
+            
+            loadingDiv.style.display = 'block';
+            resultDiv.style.display = 'none';
+            progressDiv.style.display = 'block';
+            progressDiv.innerHTML = '';
+            
+            // Clear previous results to prevent old raw/preview buttons from working
+            if (resultsContent) {
+                resultsContent.innerHTML = '';
+            }
+
+            try {
+                // Collect form data
+                const projectData = {
+                    project_name: document.getElementById('projectName').value,
+                    output_folder: document.getElementById('outputFolder').value,
+                    documentation_root_path: document.getElementById('documentationRootPath').value,
+                    frontend_project_path: document.getElementById('frontendProjectPath').value,
+                    backend_project_path: document.getElementById('backendProjectPath').value,
+                    global_system_prompt: document.getElementById('globalSystemPrompt').value,
+                    global_instructions: document.getElementById('globalInstructions').value,
+                    verification_sections: []
+                };
+
+                // Collect verification sections
+                const sectionElements = document.querySelectorAll('.verification-section');
+                sectionElements.forEach(section => {
+                    // Parse file paths from textareas
+                    const docFiles = section.querySelector('textarea[name="documentationFiles"]').value
+                        .split('\n')
+                        .map(path => path.trim())
+                        .filter(path => path.length > 0);
+                    
+                    const frontendFiles = section.querySelector('textarea[name="frontendFiles"]').value
+                        .split('\n')
+                        .map(path => path.trim())
+                        .filter(path => path.length > 0);
+                    
+                    const backendFiles = section.querySelector('textarea[name="backendFiles"]').value
+                        .split('\n')
+                        .map(path => path.trim())
+                        .filter(path => path.length > 0);
+                    
+                    // Get selected radio button values
+                    const systemPromptMode = section.querySelector('input[name^="systemPromptMode-"]:checked')?.value || 'use_global';
+                    const instructionsMode = section.querySelector('input[name^="instructionsMode-"]:checked')?.value || 'use_global';
+                    
+                    const sectionData = {
+                        name: section.querySelector('input[name="verificationName"]').value,
+                        documentation_files: docFiles,
+                        frontend_code_files: frontendFiles,
+                        backend_code_files: backendFiles,
+                        system_prompt_mode: systemPromptMode,
+                        instructions_mode: instructionsMode,
+                        verification_system_prompt: section.querySelector('textarea[name="verificationSystemPrompt"]').value,
+                        verification_instructions: section.querySelector('textarea[name="verificationInstructions"]').value
+                    };
+                    projectData.verification_sections.push(sectionData);
+                });
+
+                const aiData = {
+                    provider: document.getElementById('aiProvider').value,
+                    api_key: document.getElementById('aiApiKey').value,
+                    base_url: document.getElementById('aiBaseUrl').value,
+                    model: document.getElementById('aiModel').value,
+                    tag: document.getElementById('aiTag').value.trim(),
+                    temperature: 0.7,
+                    max_tokens: null
+                };
+
+                const requestData = {
+                    project_config: projectData,
+                    ai_config: aiData,
+                    verification_names: verificationNames
+                };
+
+                // Use streaming endpoint
+                const response = await fetch('/api/verification/run-stream', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to start verification');
+                }
+
+                // Handle streaming response
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // Keep incomplete line in buffer
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                handleProgressEvent(data);
+                            } catch (e) {
+                                console.error('Error parsing progress event:', e);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                alert('Error running verification: ' + error.message);
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        // Handle progress events from streaming
+        function handleProgressEvent(event) {
+            const progressDiv = document.getElementById('progressContent');
+            
+            switch (event.type) {
+                case 'start':
+                    progressDiv.innerHTML = `<div class="alert alert-info">${event.message}</div>`;
+                    break;
+                    
+                case 'batch_start':
+                    progressDiv.innerHTML = `
+                        <div class="alert alert-info">
+                            <h6>${event.message}</h6>
+                            <div class="progress mt-2">
+                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'section_progress':
+                    const progress = (event.current_section / event.total_sections) * 100;
+                    const progressBar = progressDiv.querySelector('.progress-bar');
+                    if (progressBar) {
+                        progressBar.style.width = `${progress}%`;
+                        progressBar.textContent = `${event.current_section}/${event.total_sections}`;
+                    }
+                    
+                    // Add current section info
+                    const currentSection = document.createElement('div');
+                    currentSection.className = 'mt-2';
+                    currentSection.innerHTML = `
+                        <small class="text-muted">
+                            <i class="fas fa-cog fa-spin"></i> ${event.message}
+                        </small>
+                    `;
+                    progressDiv.appendChild(currentSection);
+                    break;
+                    
+                case 'verification_start':
+                    addProgressItem(event.verification_name, 'Starting...', 'info');
+                    break;
+                    
+                case 'prompt_building':
+                    updateProgressItem(event.verification_name, 'Building prompt...', 'warning');
+                    break;
+                    
+                case 'ai_processing':
+                    updateProgressItem(event.verification_name, 'Processing with AI...', 'primary');
+                    break;
+                    
+                case 'ai_streaming_start':
+                    updateProgressItem(event.verification_name, 'AI streaming started...', 'primary');
+                    // Add streaming content area
+                    addStreamingContentArea(event.verification_name);
+                    break;
+                    
+                case 'ai_streaming_content':
+                    updateStreamingContent(event.verification_name, event.message, event.partial_response);
+                    break;
+                    
+                case 'ai_streaming_complete':
+                    updateProgressItem(event.verification_name, `AI streaming completed (${event.total_length} chars)`, 'success');
+                    break;
+                    
+                case 'saving_report':
+                    updateProgressItem(event.verification_name, 'Saving report...', 'info');
+                    break;
+                    
+                case 'verification_complete':
+                    updateProgressItem(event.verification_name, 'Completed successfully!', 'success');
+                    break;
+                    
+                case 'verification_error':
+                    updateProgressItem(event.verification_name, `Error: ${event.error}`, 'danger');
+                    break;
+                    
+                case 'batch_complete':
+                    progressDiv.innerHTML += `
+                        <div class="alert alert-success mt-2">
+                            <h6>${event.message}</h6>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'complete':
+                    displayResults(event.results);
+                    break;
+                    
+                case 'error':
+                    progressDiv.innerHTML += `
+                        <div class="alert alert-danger mt-2">
+                            <h6>Error: ${event.message}</h6>
+                        </div>
+                    `;
+                    break;
+            }
+        }
+
+        // Helper functions for progress display
+        function addProgressItem(name, status, type) {
+            const progressDiv = document.getElementById('progressContent');
+            const item = document.createElement('div');
+            item.id = `progress-${name}`;
+            item.className = `alert alert-${type} mt-1`;
+            item.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><strong>${name}:</strong> ${status}</span>
+                    <i class="fas fa-${getStatusIcon(type)}"></i>
+                </div>
+            `;
+            progressDiv.appendChild(item);
+        }
+
+        function updateProgressItem(name, status, type) {
+            const item = document.getElementById(`progress-${name}`);
+            if (item) {
+                item.className = `alert alert-${type} mt-1`;
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><strong>${name}:</strong> ${status}</span>
+                        <i class="fas fa-${getStatusIcon(type)}"></i>
+                    </div>
+                `;
+            }
+        }
+
+        function getStatusIcon(type) {
+            switch (type) {
+                case 'info': return 'info-circle';
+                case 'warning': return 'exclamation-triangle';
+                case 'primary': return 'cog fa-spin';
+                case 'success': return 'check-circle';
+                case 'danger': return 'times-circle';
+                default: return 'circle';
+            }
+        }
+
+        // Helper function to sanitize verification names for use in IDs
+        function sanitizeId(name) {
+            return name.replace(/[^a-zA-Z0-9-_]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+        }
+
+        // Streaming content functions
+        function addStreamingContentArea(verificationName) {
+            const progressDiv = document.getElementById('progressContent');
+            const streamingArea = document.createElement('div');
+            const sanitizedName = sanitizeId(verificationName);
+            
+            streamingArea.id = `streaming-${sanitizedName}`;
+            streamingArea.className = 'mt-2';
+            
+            // Only show streaming UI if streaming is enabled
+            if (streamingEnabled) {
+                streamingArea.innerHTML = `
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6><i class="fas fa-stream"></i> AI Response Stream - ${verificationName}</h6>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <input type="radio" class="btn-check" name="viewMode-${sanitizedName}" id="raw-${sanitizedName}" value="raw" checked>
+                                <label class="btn btn-outline-secondary" for="raw-${sanitizedName}" data-verification="${sanitizedName}" data-mode="raw" data-section="streaming">
+                                    <i class="fas fa-code"></i> Raw
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="viewMode-${sanitizedName}" id="preview-${sanitizedName}" value="preview">
+                                <label class="btn btn-outline-primary" for="preview-${sanitizedName}" data-verification="${sanitizedName}" data-mode="preview" data-section="streaming">
+                                    <i class="fas fa-eye"></i> Preview
+                                </label>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="streaming-content-raw" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; display: block;">
+                                <span class="text-muted">Waiting for AI response...</span>
+                            </div>
+                            <div class="streaming-content-preview" style="max-height: 400px; overflow-y: auto; background-color: #ffffff; padding: 15px; border-radius: 5px; border: 1px solid #dee2e6; display: none;">
+                                <span class="text-muted">Waiting for AI response...</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Add event listeners for view mode toggle using event delegation
+                addToggleEventListeners(sanitizedName, verificationName);
+                
+                // Add fallback click handlers on labels
+                setTimeout(() => {
+                    const rawLabel = streamingArea.querySelector(`label[data-verification="${sanitizedName}"][data-mode="raw"]`);
+                    const previewLabel = streamingArea.querySelector(`label[data-verification="${sanitizedName}"][data-mode="preview"]`);
+                    
+                    if (rawLabel) {
+                        rawLabel.addEventListener('click', () => {
+                            console.log(`🔄 Raw label clicked for: ${verificationName}`);
+                            handleRawToggle({ target: { id: `raw-${sanitizedName}` } });
+                        });
+                    }
+                    
+                    if (previewLabel) {
+                        previewLabel.addEventListener('click', () => {
+                            console.log(`🔄 Preview label clicked for: ${verificationName}`);
+                            handlePreviewToggle({ target: { id: `preview-${sanitizedName}` } });
+                        });
+                    }
+                }, 150);
+            } else {
+                // Show simple progress indicator when streaming is disabled
+                streamingArea.innerHTML = `
+                    <div class="card">
+                        <div class="card-header">
+                            <h6><i class="fas fa-cog fa-spin"></i> AI Processing - ${verificationName}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Processing...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Processing AI response...</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            progressDiv.appendChild(streamingArea);
+            
+            // Store the sanitized name for later use
+            streamingArea.setAttribute('data-verification-name', verificationName);
+            streamingArea.setAttribute('data-sanitized-name', sanitizedName);
+        }
+        
+        function addToggleEventListeners(sanitizedName, verificationName) {
+            // Use a small delay to ensure DOM is ready
+            setTimeout(() => {
+                const rawRadio = document.getElementById(`raw-${sanitizedName}`);
+                const previewRadio = document.getElementById(`preview-${sanitizedName}`);
+                
+                if (rawRadio && previewRadio) {
+                    // Remove any existing listeners first
+                    rawRadio.removeEventListener('change', handleRawToggle);
+                    previewRadio.removeEventListener('change', handlePreviewToggle);
+                    
+                    // Add new listeners
+                    rawRadio.addEventListener('change', handleRawToggle);
+                    previewRadio.addEventListener('change', handlePreviewToggle);
+                    
+                    console.log(`✅ Event listeners added for verification: ${verificationName} (${sanitizedName})`);
+                } else {
+                    console.error(`❌ Could not find radio buttons for verification: ${verificationName} (${sanitizedName})`);
+                    console.log('Available elements:', {
+                        rawRadio: document.getElementById(`raw-${sanitizedName}`),
+                        previewRadio: document.getElementById(`preview-${sanitizedName}`)
+                    });
+                }
+            }, 100);
+        }
+        
+        function handleRawToggle(event) {
+            const sanitizedName = event.target.id.replace('raw-', '');
+            const streamingArea = document.getElementById(`streaming-${sanitizedName}`);
+            
+            if (streamingArea) {
+                const rawDiv = streamingArea.querySelector('.streaming-content-raw');
+                const previewDiv = streamingArea.querySelector('.streaming-content-preview');
+                
+                if (rawDiv && previewDiv) {
+                    rawDiv.style.display = 'block';
+                    previewDiv.style.display = 'none';
+                    console.log(`Switched to raw view for: ${streamingArea.getAttribute('data-verification-name')}`);
+                }
+            }
+        }
+        
+        function handlePreviewToggle(event) {
+            const sanitizedName = event.target.id.replace('preview-', '');
+            const streamingArea = document.getElementById(`streaming-${sanitizedName}`);
+            
+            if (streamingArea) {
+                const rawDiv = streamingArea.querySelector('.streaming-content-raw');
+                const previewDiv = streamingArea.querySelector('.streaming-content-preview');
+                
+                if (rawDiv && previewDiv) {
+                    rawDiv.style.display = 'none';
+                    previewDiv.style.display = 'block';
+                    
+                    // Show loading indicator briefly
+                    previewDiv.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Rendering markdown...</div>';
+                    
+                    // Re-render markdown when switching to preview
+                    setTimeout(() => {
+                        const verificationName = streamingArea.getAttribute('data-verification-name');
+                        updateMarkdownPreview(verificationName);
+                    }, 50);
+                    
+                    console.log(`Switched to preview view for: ${streamingArea.getAttribute('data-verification-name')}`);
+                }
+            }
+        }
+
+        function updateStreamingContent(verificationName, newContent, fullResponse) {
+            const sanitizedName = sanitizeId(verificationName);
+            const streamingArea = document.getElementById(`streaming-${sanitizedName}`);
+            
+            if (streamingArea) {
+                if (streamingEnabled) {
+                    // Streaming mode - update content areas
+                    const rawContentDiv = streamingArea.querySelector('.streaming-content-raw');
+                    const previewContentDiv = streamingArea.querySelector('.streaming-content-preview');
+                    const previewRadio = document.getElementById(`preview-${sanitizedName}`);
+                    const rawRadio = document.getElementById(`raw-${sanitizedName}`);
+                    
+                    if (rawContentDiv) {
+                        // Update raw content
+                        rawContentDiv.textContent = fullResponse;
+                        // Scroll to bottom
+                        rawContentDiv.scrollTop = rawContentDiv.scrollHeight;
+                    }
+                    
+                    // Auto-switch to preview mode if markdown content is detected and user hasn't manually selected raw mode
+                    if (isMarkdownContent(fullResponse) && rawRadio && !rawRadio.checked) {
+                        if (previewRadio && !previewRadio.checked) {
+                            previewRadio.checked = true;
+                            if (rawContentDiv) rawContentDiv.style.display = 'none';
+                            if (previewContentDiv) previewContentDiv.style.display = 'block';
+                        }
+                    }
+                    
+                    if (previewContentDiv && previewContentDiv.style.display !== 'none') {
+                        // Update markdown preview in real-time
+                        updateMarkdownPreview(verificationName);
+                    }
+                } else {
+                    // Non-streaming mode - just show completion
+                    const processingDiv = streamingArea.querySelector('.text-center');
+                    if (processingDiv) {
+                        processingDiv.innerHTML = `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i>
+                                <strong>AI Processing Complete!</strong><br>
+                                Response received (${fullResponse.length} characters)
+                            </div>
+                        `;
+                    }
+                }
+            }
+        }
+        
+        function isMarkdownContent(content) {
+            // Simple heuristics to detect markdown content
+            const markdownIndicators = [
+                /^#+\s/m,           // Headers
+                /\*\*.*\*\*/,       // Bold text
+                /\*.*\*/,           // Italic text
+                /^\s*[-*+]\s/m,     // Unordered lists
+                /^\s*\d+\.\s/m,     // Ordered lists
+                /```/,              // Code blocks
+                /`[^`]+`/,          // Inline code
+                /^\s*>/m,           // Blockquotes
+                /\[.*\]\(.*\)/,     // Links
+                /^\s*\|.*\|/m       // Tables
+            ];
+            
+            return markdownIndicators.some(pattern => pattern.test(content));
+        }
+        
+        function updateMarkdownPreview(verificationName) {
+            const sanitizedName = sanitizeId(verificationName);
+            const streamingArea = document.getElementById(`streaming-${sanitizedName}`);
+            
+            if (streamingArea) {
+                const rawContentDiv = streamingArea.querySelector('.streaming-content-raw');
+                const previewContentDiv = streamingArea.querySelector('.streaming-content-preview');
+                
+                if (rawContentDiv && previewContentDiv) {
+                    const rawContent = rawContentDiv.textContent;
+                    try {
+                        // Use marked.js to render markdown
+                        const htmlContent = marked.parse(rawContent);
+                        previewContentDiv.innerHTML = htmlContent;
+                        // Scroll to bottom
+                        previewContentDiv.scrollTop = previewContentDiv.scrollHeight;
+                        console.log(`Markdown preview updated for: ${verificationName}`);
+                    } catch (error) {
+                        console.error('Error rendering markdown:', error);
+                        previewContentDiv.innerHTML = `<div class="alert alert-warning">Error rendering markdown: ${error.message}</div>`;
+                    }
+                }
+            }
+        }
+
+        // Display results
+        function displayResults(results) {
+            const resultDiv = document.querySelector('.result-section');
+            const contentDiv = document.getElementById('resultsContent');
+            const projectName = document.getElementById('projectName').value;
+            
+            let html = `
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">${results.total_verifications}</h5>
+                                <p class="card-text">Total Verifications</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title text-success">${results.successful_verifications}</h5>
+                                <p class="card-text">Successful</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title text-danger">${results.failed_verifications}</h5>
+                                <p class="card-text">Failed</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            results.results.forEach(result => {
+                const statusClass = result.success ? 'success' : 'danger';
+                const statusIcon = result.success ? 'check-circle' : 'times-circle';
+                const sanitizedName = sanitizeId(result.verification_name);
+                
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="fas fa-${statusIcon} text-${statusClass}"></i>
+                                ${result.verification_name}
+                            </h6>
+                            <div class="d-flex gap-2">
+                                ${result.success && result.report_content ? 
+                                    `<div class="btn-group btn-group-sm" role="group">
+                                        <input type="radio" class="btn-check" name="resultsViewMode-${sanitizedName}" id="results-raw-${sanitizedName}" value="raw" checked>
+                                        <label class="btn btn-outline-secondary" for="results-raw-${sanitizedName}" data-verification="${sanitizedName}" data-mode="raw" data-section="results">
+                                            <i class="fas fa-code"></i> Raw
+                                        </label>
+                                        
+                                        <input type="radio" class="btn-check" name="resultsViewMode-${sanitizedName}" id="results-preview-${sanitizedName}" value="preview">
+                                        <label class="btn btn-outline-primary" for="results-preview-${sanitizedName}" data-verification="${sanitizedName}" data-mode="preview" data-section="results">
+                                            <i class="fas fa-eye"></i> Preview
+                                        </label>
+                                    </div>` : ''
+                                }
+                                ${result.success && result.report_file_path ? 
+                                    `<a href="/api/reports/${projectName}/${result.verification_name}/${result.report_file_path.split('/').pop()}" class="btn btn-sm btn-outline-primary" download>
+                                        <i class="fas fa-download"></i> Download Report
+                                    </a>` : ''
+                                }
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            ${result.success ? 
+                                `<p class="text-success">Verification completed successfully!</p>` :
+                                `<p class="text-danger">Error: ${result.error_message}</p>`
+                            }
+                            ${result.success && result.report_content ? 
+                                `<div class="mt-3">
+                                    <div class="report-content-raw" id="results-report-raw-${sanitizedName}" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; display: block;">
+                                        ${result.report_content}
+                                    </div>
+                                    <div class="report-content-preview" id="results-report-preview-${sanitizedName}" style="max-height: 400px; overflow-y: auto; background-color: #ffffff; padding: 15px; border-radius: 5px; border: 1px solid #dee2e6; display: none;">
+                                        <span class="text-muted">Loading preview...</span>
+                                    </div>
+                                </div>` : ''
+                            }
+                        </div>
+                    </div>
+                `;
+            });
+
+            contentDiv.innerHTML = html;
+            resultDiv.style.display = 'block';
+            
+            // Add event listeners for the new raw/preview toggles in results
+            addResultsToggleEventListeners();
+        }
+        
+        // Add event listeners for results section raw/preview toggles
+        function addResultsToggleEventListeners() {
+            // Use event delegation for dynamically added elements
+            document.addEventListener('change', function(event) {
+                if (event.target.matches('input[name^="resultsViewMode-"]')) {
+                    const sanitizedName = event.target.id.replace(/^(results-raw-|results-preview-)/, '');
+                    const mode = event.target.value;
+                    const verificationName = event.target.closest('.card').querySelector('h6').textContent.trim();
+                    
+                    handleResultsToggle(sanitizedName, mode, verificationName);
+                }
+            });
+            
+            // Also handle label clicks as fallback
+            document.addEventListener('click', function(event) {
+                if (event.target.matches('label[data-section="results"]')) {
+                    const sanitizedName = event.target.getAttribute('data-verification');
+                    const mode = event.target.getAttribute('data-mode');
+                    const verificationName = event.target.closest('.card').querySelector('h6').textContent.trim();
+                    
+                    // Find and check the corresponding radio button
+                    const radioButton = document.getElementById(`results-${mode}-${sanitizedName}`);
+                    if (radioButton) {
+                        radioButton.checked = true;
+                        handleResultsToggle(sanitizedName, mode, verificationName);
+                    }
+                }
+            });
+        }
+        
+        // Handle raw/preview toggle for results section
+        function handleResultsToggle(sanitizedName, mode, verificationName) {
+            const rawDiv = document.getElementById(`results-report-raw-${sanitizedName}`);
+            const previewDiv = document.getElementById(`results-report-preview-${sanitizedName}`);
+            
+            if (rawDiv && previewDiv) {
+                if (mode === 'raw') {
+                    rawDiv.style.display = 'block';
+                    previewDiv.style.display = 'none';
+                } else if (mode === 'preview') {
+                    rawDiv.style.display = 'none';
+                    previewDiv.style.display = 'block';
+                    
+                    // Render markdown preview
+                    updateResultsMarkdownPreview(sanitizedName, verificationName);
+                }
+            }
+        }
+        
+        // Update markdown preview for results section
+        function updateResultsMarkdownPreview(sanitizedName, verificationName) {
+            const rawDiv = document.getElementById(`results-report-raw-${sanitizedName}`);
+            const previewDiv = document.getElementById(`results-report-preview-${sanitizedName}`);
+            
+            if (rawDiv && previewDiv) {
+                const rawContent = rawDiv.textContent;
+                try {
+                    // Use marked.js to render markdown
+                    const htmlContent = marked.parse(rawContent);
+                    previewDiv.innerHTML = htmlContent;
+                    console.log(`Markdown preview updated for results: ${verificationName}`);
+                } catch (error) {
+                    console.error('Error rendering markdown preview:', error);
+                    previewDiv.innerHTML = `<div class="alert alert-warning">Error rendering markdown: ${error.message}</div>`;
+                }
+            }
+        }
+
+        // Global streaming configuration
+        let streamingEnabled = true;
+
+        // Load default AI configuration and streaming settings
+        async function loadDefaultAIConfig() {
+            try {
+                const response = await fetch('/api/config/default-ai');
+                if (response.ok) {
+                    const config = await response.json();
+                    document.getElementById('aiProvider').value = config.provider;
+                    document.getElementById('aiModel').value = config.model;
+                    document.getElementById('aiBaseUrl').value = config.base_url || '';
+                    document.getElementById('aiApiKey').value = config.api_key || '';
+                    
+                    // Update provider-specific defaults to ensure correct values are set
+                    updateAIProviderConfig(true);
+                }
+            } catch (error) {
+                console.error('Error loading default AI config:', error);
+            }
+        }
+
+        // Load streaming configuration
+        async function loadStreamingConfig() {
+            try {
+                const response = await fetch('/api/config/streaming');
+                if (response.ok) {
+                    const config = await response.json();
+                    streamingEnabled = config.enabled;
+                    console.log(`Streaming ${streamingEnabled ? 'enabled' : 'disabled'} by configuration`);
+                }
+            } catch (error) {
+                console.error('Error loading streaming config:', error);
+            }
+        }
+
+        // Test AI connection
+        async function testAIConnection() {
+            const statusDiv = document.getElementById('connectionStatus');
+            const button = event.target;
+            const originalText = button.innerHTML;
+            
+            // Show loading state
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+            button.disabled = true;
+            statusDiv.innerHTML = '';
+            
+            try {
+                // Get current form values
+                const aiConfig = {
+                    provider: document.getElementById('aiProvider').value,
+                    model: document.getElementById('aiModel').value,
+                    base_url: document.getElementById('aiBaseUrl').value || null,
+                    api_key: document.getElementById('aiApiKey').value || null,
+                    tag: document.getElementById('aiTag').value || null,
+                    temperature: 0.7,
+                    max_tokens: null
+                };
+                
+                // Debug: Log the config being sent
+                console.log('Testing AI connection with config:', aiConfig);
+                
+                const response = await fetch('/api/ai/test-connection', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(aiConfig)
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                let result;
+                try {
+                    result = await response.json();
+                    console.log('AI connection test result:', result);
+                } catch (parseError) {
+                    console.error('Failed to parse response as JSON:', parseError);
+                    const textResponse = await response.text();
+                    console.error('Raw response:', textResponse);
+                    throw new Error('Failed to parse server response: ' + parseError.message);
+                }
+                
+                if (result.status === 'success') {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> 
+                            <strong>Connection Successful!</strong><br>
+                            Provider: ${result.provider}<br>
+                            Model: ${result.model}<br>
+                            Base URL: ${result.base_url}<br>
+                            Response: ${result.response}
+                        </div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-times-circle"></i> 
+                            <strong>Connection Failed!</strong><br>
+                            Provider: ${result.provider || 'Unknown'}<br>
+                            Model: ${result.model || 'Unknown'}<br>
+                            Base URL: ${result.base_url || 'Unknown'}<br>
+                            Error: ${result.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times-circle"></i> 
+                        <strong>Test Failed!</strong><br>
+                        Error: ${error.message}
+                    </div>
+                `;
+            } finally {
+                // Restore button state
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
+        // Global event listener for toggle buttons (fallback)
+        document.addEventListener('click', function(event) {
+            if (event.target.matches('label[data-verification]')) {
+                const sanitizedName = event.target.getAttribute('data-verification');
+                const mode = event.target.getAttribute('data-mode');
+                const section = event.target.getAttribute('data-section');
+                
+                if (section === 'results') {
+                    // Handle results section
+                    const verificationName = event.target.closest('.card').querySelector('h6').textContent.trim();
+                    console.log(`🌐 Global click handler (results): ${mode} mode for ${verificationName}`);
+                    
+                    const radioButton = document.getElementById(`results-${mode}-${sanitizedName}`);
+                    if (radioButton) {
+                        radioButton.checked = true;
+                        handleResultsToggle(sanitizedName, mode, verificationName);
+                    }
+                } else {
+                    // Handle streaming section
+                    const streamingArea = document.getElementById(`streaming-${sanitizedName}`);
+                    
+                    if (streamingArea) {
+                        const verificationName = streamingArea.getAttribute('data-verification-name');
+                        console.log(`🌐 Global click handler (streaming): ${mode} mode for ${verificationName}`);
+                        
+                        if (mode === 'raw') {
+                            handleRawToggle({ target: { id: `raw-${sanitizedName}` } });
+                        } else if (mode === 'preview') {
+                            handlePreviewToggle({ target: { id: `preview-${sanitizedName}` } });
+                        }
+                    }
+                }
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDefaultAIConfig();
+            loadStreamingConfig();
+            
+            // Handle project configuration collapse chevron rotation
+            const projectConfigCollapse = document.getElementById('projectConfigCollapse');
+            const projectConfigChevron = document.getElementById('projectConfigChevron');
+            
+            if (projectConfigCollapse && projectConfigChevron) {
+                projectConfigCollapse.addEventListener('show.bs.collapse', function() {
+                    projectConfigChevron.classList.remove('fa-chevron-down');
+                    projectConfigChevron.classList.add('fa-chevron-up');
+                });
+                
+                projectConfigCollapse.addEventListener('hide.bs.collapse', function() {
+                    projectConfigChevron.classList.remove('fa-chevron-up');
+                    projectConfigChevron.classList.add('fa-chevron-down');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,316 @@
+name: PRD Code Verifier Self-Test
+
+on:
+  push:
+    branches: [validate]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      ai_provider:
+        description: "AI Provider to use for testing"
+        required: true
+        default: "lm_studio"
+        type: choice
+        options:
+          - lm_studio
+          - openai
+          - gemini
+          - ollama
+      ai_model:
+        description: "AI Model to use"
+        required: false
+        default: ""
+        type: string
+      run_all_verifications:
+        description: "Run all verifications instead of just changed files"
+        required: false
+        default: "true"
+        type: boolean
+      publish_destination:
+        description: "Where to publish reports"
+        required: false
+        default: "artifacts_only"
+        type: choice
+        options:
+          - gist
+          - repository
+          - artifacts_only
+      publish_repo:
+        description: "Repository to publish to (format: owner/repo)"
+        required: false
+        default: ""
+        type: string
+      publish_branch:
+        description: "Branch to publish to"
+        required: false
+        default: "main"
+        type: string
+
+jobs:
+  self-verification:
+    runs-on: ubuntu-latest
+    # Prevent self-triggering when reports are published
+    if: github.event.head_commit.author.name != 'github-actions[bot]' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch full history for change detection
+
+      - name: PRD Code Verification - Self Test
+        uses: gowrav-vishwakarma/prd-code-verifier@main
+        with:
+          project_file: "tests/self-test-project.json"
+
+          # Use this repository for all components (self-test)
+          documentation_repo: "https://${{ secrets.TOKEN_GITHUB }}@github.com/gowrav-vishwakarma/prd-code-verifier.git"
+          documentation_branch: "main"
+
+          frontend_repo: "https://${{ secrets.TOKEN_GITHUB }}@github.com/gowrav-vishwakarma/prd-code-verifier.git"
+          frontend_branch: "main"
+
+          backend_repo: "https://${{ secrets.TOKEN_GITHUB }}@github.com/gowrav-vishwakarma/prd-code-verifier.git"
+          backend_branch: "main"
+
+          # AI Configuration
+          ai_provider: ${{ github.event.inputs.ai_provider || 'gemini' }}
+          ai_model: ${{ github.event.inputs.ai_model || 'gemini-2.5-flash' }}
+
+          # Verification Settings
+          run_all_verifications: ${{ github.event.inputs.run_all_verifications || 'true' }}
+          output_folder: "./reports"
+          publish_results: ${{ github.event.inputs.publish_destination != 'artifacts_only' }}
+          publish_path: "reports"
+
+          # Change Detection
+          base_commit: "HEAD~1"
+          target_commit: "HEAD"
+        env:
+          # AI Provider API Keys (passed to action as environment variables)
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+          # LM Studio Configuration (for local testing)
+          LM_STUDIO_BASE_URL: ${{ vars.LM_STUDIO_BASE_URL || 'http://localhost:1234/v1' }}
+          LM_STUDIO_MODEL: ${{ vars.LM_STUDIO_MODEL || 'qwen/qwen3-4b-2507' }}
+
+          # Ollama Configuration (for local testing)
+          OLLAMA_BASE_URL: ${{ vars.OLLAMA_BASE_URL || 'http://localhost:11434' }}
+          OLLAMA_MODEL: ${{ vars.OLLAMA_MODEL || 'llama2' }}
+
+          # GitHub Token for publishing
+          GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB }}
+
+          # Application Configuration
+          DEBUG: "false"
+          ENABLE_STREAMING: "true"
+
+          # Suppress warnings
+          GRPC_VERBOSITY: "ERROR"
+          GRPC_TRACE: ""
+
+          # Self-Test Specific
+          SELF_TEST_MODE: "true"
+          TEST_OUTPUT_FOLDER: "./reports"
+
+      - name: Create Gist with Reports
+        if: github.event.inputs.publish_destination == 'gist' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Check if reports directory exists
+            const reportsDir = './reports';
+            if (!fs.existsSync(reportsDir)) {
+              console.log('No reports directory found');
+              return;
+            }
+
+            // Find all report files
+            const reportFiles = [];
+            function findReports(dir) {
+              const files = fs.readdirSync(dir);
+              for (const file of files) {
+                const filePath = path.join(dir, file);
+                const stat = fs.statSync(filePath);
+                if (stat.isDirectory()) {
+                  findReports(filePath);
+                } else if (file.endsWith('_report.md')) {
+                  reportFiles.push(filePath);
+                }
+              }
+            }
+
+            findReports(reportsDir);
+
+            if (reportFiles.length === 0) {
+              console.log('No report files found');
+              return;
+            }
+
+            // Create gist content
+            let gistContent = '# PRD Code Verifier Self-Test Results\n\n';
+            gistContent += `**Generated:** ${new Date().toISOString()}\n`;
+            gistContent += `**AI Provider:** ${process.env.INPUT_AI_PROVIDER || 'gemini'}\n`;
+            gistContent += `**Reports Found:** ${reportFiles.length}\n\n`;
+
+            // Add each report
+            for (const reportFile of reportFiles) {
+              const relativePath = path.relative(reportsDir, reportFile);
+              const fileName = path.basename(reportFile);
+              const content = fs.readFileSync(reportFile, 'utf8');
+              
+              gistContent += `## ${fileName}\n\n`;
+              gistContent += `**Path:** \`${relativePath}\`\n\n`;
+              gistContent += content + '\n\n---\n\n';
+            }
+
+            // Try to find existing gist first, or create new one
+            let gist;
+            const gistDescription = 'PRD Code Verifier Self-Test Results';
+
+            try {
+              // Try to find existing gist with our description
+              const gists = await github.rest.gists.list();
+              const existingGist = gists.data.find(g => g.description === gistDescription);
+              
+              if (existingGist) {
+                // Update existing gist
+                gist = await github.rest.gists.update({
+                  gist_id: existingGist.id,
+                  description: `${gistDescription} - ${new Date().toISOString()}`,
+                  files: {
+                    'verification-results.md': {
+                      content: gistContent
+                    }
+                  }
+                });
+                console.log(`✅ Updated existing Gist: ${gist.data.html_url}`);
+              } else {
+                // Create new gist
+                gist = await github.rest.gists.create({
+                  description: `${gistDescription} - ${new Date().toISOString()}`,
+                  public: false,
+                  files: {
+                    'verification-results.md': {
+                      content: gistContent
+                    }
+                  }
+                });
+                console.log(`✅ Created new Gist: ${gist.data.html_url}`);
+              }
+            } catch (error) {
+              console.log('Error managing Gist:', error.message);
+              // Fallback: create new gist
+              gist = await github.rest.gists.create({
+                description: `${gistDescription} - ${new Date().toISOString()}`,
+                public: false,
+                files: {
+                  'verification-results.md': {
+                    content: gistContent
+                  }
+                }
+              });
+              console.log(`✅ Created fallback Gist: ${gist.data.html_url}`);
+            }
+
+            console.log(`✅ Gist created: ${gist.data.html_url}`);
+            console.log(`📊 Published ${reportFiles.length} reports to Gist`);
+
+      - name: Publish to External Repository
+        if: github.event.inputs.publish_destination == 'repository' && github.event.inputs.publish_repo != '' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Check if reports directory exists
+            const reportsDir = './reports';
+            if (!fs.existsSync(reportsDir)) {
+              console.log('No reports directory found');
+              return;
+            }
+
+            // Find all report files
+            const reportFiles = [];
+            function findReports(dir) {
+              const files = fs.readdirSync(dir);
+              for (const file of files) {
+                const filePath = path.join(dir, file);
+                const stat = fs.statSync(filePath);
+                if (stat.isDirectory()) {
+                  findReports(filePath);
+                } else if (file.endsWith('_report.md')) {
+                  reportFiles.push(filePath);
+                }
+              }
+            }
+
+            findReports(reportsDir);
+
+            if (reportFiles.length === 0) {
+              console.log('No report files found');
+              return;
+            }
+
+            const targetRepo = '${{ github.event.inputs.publish_repo }}';
+            const targetBranch = '${{ github.event.inputs.publish_branch }}' || 'main';
+
+            console.log(`📤 Publishing ${reportFiles.length} reports to ${targetRepo}/${targetBranch}`);
+
+            // Create a summary file
+            let summaryContent = '# PRD Code Verifier Self-Test Results\n\n';
+            summaryContent += `**Generated:** ${new Date().toISOString()}\n`;
+            summaryContent += `**AI Provider:** ${process.env.INPUT_AI_PROVIDER || 'gemini'}\n`;
+            summaryContent += `**Reports Found:** ${reportFiles.length}\n\n`;
+            summaryContent += '## Reports\n\n';
+
+            for (const reportFile of reportFiles) {
+              const relativePath = path.relative(reportsDir, reportFile);
+              const fileName = path.basename(reportFile);
+              summaryContent += `- [${fileName}](reports/${relativePath})\n`;
+            }
+
+            // Upload summary file
+            await github.rest.repos.createOrUpdateFileContents({
+              owner: targetRepo.split('/')[0],
+              repo: targetRepo.split('/')[1],
+              path: 'prd-verification-results.md',
+              message: `Update PRD verification results - ${new Date().toISOString()}`,
+              content: Buffer.from(summaryContent).toString('base64'),
+              branch: targetBranch
+            });
+
+            // Upload each report file
+            for (const reportFile of reportFiles) {
+              const relativePath = path.relative(reportsDir, reportFile);
+              const content = fs.readFileSync(reportFile, 'utf8');
+              
+              await github.rest.repos.createOrUpdateFileContents({
+                owner: targetRepo.split('/')[0],
+                repo: targetRepo.split('/')[1],
+                path: `reports/${relativePath}`,
+                message: `Update verification report - ${path.basename(reportFile)}`,
+                content: Buffer.from(content).toString('base64'),
+                branch: targetBranch
+              });
+            }
+
+            console.log(`✅ Published ${reportFiles.length} reports to ${targetRepo}/${targetBranch}`);
+
+      - name: Notify on Failure
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ **PRD Code Verifier Self-Test Failed**\n\nThe self-verification process encountered an error. Please check the workflow logs for details.'
+            });

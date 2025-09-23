@@ -1,0 +1,393 @@
+name: "PRD Code Verifier"
+description: "Verify code implementations against documentation using AI"
+author: "gowrav-vishwakarma"
+branding:
+  icon: "search"
+  color: "blue"
+
+inputs:
+  # Project Configuration
+  project_file:
+    description: "Path to project JSON configuration file"
+    required: true
+    default: "prd-verification.json"
+
+  # Repository Configuration
+  documentation_repo:
+    description: "Documentation repository URL (optional)"
+    required: false
+    default: ""
+
+  documentation_branch:
+    description: "Documentation repository branch"
+    required: false
+    default: "main"
+
+  frontend_repo:
+    description: "Frontend repository URL (optional)"
+    required: false
+    default: ""
+
+  frontend_branch:
+    description: "Frontend repository branch"
+    required: false
+    default: "main"
+
+  backend_repo:
+    description: "Backend repository URL (optional)"
+    required: false
+    default: ""
+
+  backend_branch:
+    description: "Backend repository branch"
+    required: false
+    default: "main"
+
+  # Verification Configuration
+  run_all_verifications:
+    description: "Run all verifications instead of just changed files"
+    required: false
+    default: "false"
+
+  specific_verifications:
+    description: "Comma-separated list of specific verification names to run"
+    required: false
+    default: ""
+
+  # AI Configuration
+  ai_provider:
+    description: "AI provider to use (openai, gemini, ollama, lm_studio)"
+    required: false
+    default: "openai"
+
+  ai_model:
+    description: "AI model to use"
+    required: false
+    default: "gpt-3.5-turbo"
+
+  ai_base_url:
+    description: "AI provider base URL (for custom endpoints)"
+    required: false
+    default: ""
+
+  # Output Configuration
+  output_folder:
+    description: "Output folder for reports"
+    required: false
+    default: "./reports"
+
+  publish_results:
+    description: "Publish results to GitHub"
+    required: false
+    default: "true"
+
+  publish_path:
+    description: "Path in repository to publish results"
+    required: false
+    default: "reports"
+
+  publish_to_repo:
+    description: "Repository to publish to (format: owner/repo, overrides current repo)"
+    required: false
+    default: ""
+
+  publish_to_branch:
+    description: "Branch to publish to (overrides current branch)"
+    required: false
+    default: ""
+
+  # Git Configuration
+  base_commit:
+    description: "Base commit for change detection"
+    required: false
+    default: "HEAD~1"
+
+  target_commit:
+    description: "Target commit for change detection"
+    required: false
+    default: "HEAD"
+
+outputs:
+  results_path:
+    description: "Path to the generated results"
+    value: ${{ steps.verification.outputs.results_path }}
+
+  verification_count:
+    description: "Number of verifications run"
+    value: ${{ steps.verification.outputs.verification_count }}
+
+  success_count:
+    description: "Number of successful verifications"
+    value: ${{ steps.verification.outputs.success_count }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repositories
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 2
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install UV
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: "latest"
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        uv sync
+
+    - name: Set up environment variables
+      shell: bash
+      run: |
+        # Set CR mode
+        echo "CR_MODE=github_actions" >> $GITHUB_ENV
+
+        # Set project file
+        echo "CR_PROJECT_FILE=${{ inputs.project_file }}" >> $GITHUB_ENV
+
+        # Set output folder
+        echo "CR_OUTPUT_FOLDER=${{ inputs.output_folder }}" >> $GITHUB_ENV
+
+        # Set repository URLs
+        if [ -n "${{ inputs.documentation_repo }}" ]; then
+          echo "CR_DOCUMENTATION_REPO_URL=${{ inputs.documentation_repo }}" >> $GITHUB_ENV
+          echo "CR_DOCUMENTATION_REPO_BRANCH=${{ inputs.documentation_branch }}" >> $GITHUB_ENV
+        else
+          echo "CR_DOCUMENTATION_REPO_URL=${{ github.server_url }}/${{ github.repository }}.git" >> $GITHUB_ENV
+          echo "CR_DOCUMENTATION_REPO_BRANCH=${{ github.ref_name }}" >> $GITHUB_ENV
+        fi
+
+        if [ -n "${{ inputs.frontend_repo }}" ]; then
+          echo "CR_FRONTEND_REPO_URL=${{ inputs.frontend_repo }}" >> $GITHUB_ENV
+          echo "CR_FRONTEND_REPO_BRANCH=${{ inputs.frontend_branch }}" >> $GITHUB_ENV
+        else
+          echo "CR_FRONTEND_REPO_URL=${{ github.server_url }}/${{ github.repository }}.git" >> $GITHUB_ENV
+          echo "CR_FRONTEND_REPO_BRANCH=${{ github.ref_name }}" >> $GITHUB_ENV
+        fi
+
+        if [ -n "${{ inputs.backend_repo }}" ]; then
+          echo "CR_BACKEND_REPO_URL=${{ inputs.backend_repo }}" >> $GITHUB_ENV
+          echo "CR_BACKEND_REPO_BRANCH=${{ inputs.backend_branch }}" >> $GITHUB_ENV
+        else
+          echo "CR_BACKEND_REPO_URL=${{ github.server_url }}/${{ github.repository }}.git" >> $GITHUB_ENV
+          echo "CR_BACKEND_REPO_BRANCH=${{ github.ref_name }}" >> $GITHUB_ENV
+        fi
+
+        # Set verification mode
+        if [ "${{ inputs.run_all_verifications }}" = "true" ]; then
+          echo "CR_RUN_ALL_VERIFICATIONS=true" >> $GITHUB_ENV
+        elif [ -n "${{ inputs.specific_verifications }}" ]; then
+          echo "CR_SPECIFIC_VERIFICATIONS=${{ inputs.specific_verifications }}" >> $GITHUB_ENV
+        else
+          echo "CR_RUN_ALL_VERIFICATIONS=false" >> $GITHUB_ENV
+        fi
+
+        # Set AI configuration
+        echo "CR_AI_PROVIDER=${{ inputs.ai_provider }}" >> $GITHUB_ENV
+        echo "CR_AI_MODEL=${{ inputs.ai_model }}" >> $GITHUB_ENV
+        if [ -n "${{ inputs.ai_base_url }}" ]; then
+          echo "CR_AI_BASE_URL=${{ inputs.ai_base_url }}" >> $GITHUB_ENV
+        fi
+
+        # Set AI API keys based on provider
+        case "${{ inputs.ai_provider }}" in
+          "openai")
+            if [ -n "${OPENAI_API_KEY}" ]; then
+              echo "OPENAI_API_KEY=${OPENAI_API_KEY}" >> $GITHUB_ENV
+            fi
+            ;;
+          "gemini")
+            if [ -n "${GEMINI_API_KEY}" ]; then
+              echo "GEMINI_API_KEY=${GEMINI_API_KEY}" >> $GITHUB_ENV
+            fi
+            ;;
+          "ollama")
+            if [ -n "${OLLAMA_BASE_URL}" ]; then
+              echo "OLLAMA_BASE_URL=${OLLAMA_BASE_URL}" >> $GITHUB_ENV
+            fi
+            ;;
+          "lm_studio")
+            if [ -n "${LM_STUDIO_BASE_URL}" ]; then
+              echo "LM_STUDIO_BASE_URL=${LM_STUDIO_BASE_URL}" >> $GITHUB_ENV
+            fi
+            ;;
+        esac
+
+        # Set publishing configuration
+        echo "CR_PUBLISH_RESULTS=${{ inputs.publish_results }}" >> $GITHUB_ENV
+        echo "CR_PUBLISH_METHOD=github" >> $GITHUB_ENV
+        echo "CR_GITHUB_TOKEN=${GITHUB_TOKEN}" >> $GITHUB_ENV
+
+        # Use external repository if specified, otherwise use current repo
+        if [ -n "${{ inputs.publish_to_repo }}" ]; then
+          echo "CR_GITHUB_REPO=${{ inputs.publish_to_repo }}" >> $GITHUB_ENV
+        else
+          echo "CR_GITHUB_REPO=${{ github.repository }}" >> $GITHUB_ENV
+        fi
+
+        # Use external branch if specified, otherwise use current branch
+        if [ -n "${{ inputs.publish_to_branch }}" ]; then
+          echo "CR_GITHUB_BRANCH=${{ inputs.publish_to_branch }}" >> $GITHUB_ENV
+        else
+          echo "CR_GITHUB_BRANCH=${{ github.ref_name }}" >> $GITHUB_ENV
+        fi
+
+        echo "CR_GITHUB_PATH=${{ inputs.publish_path }}" >> $GITHUB_ENV
+
+        # Set git configuration
+        echo "CR_BASE_COMMIT=${{ inputs.base_commit }}" >> $GITHUB_ENV
+        echo "CR_TARGET_COMMIT=${{ inputs.target_commit }}" >> $GITHUB_ENV
+
+    - name: Run Continuous Review
+      id: verification
+      shell: bash
+      env:
+        # AI provider secrets are passed from the workflow as environment variables
+        OPENAI_API_KEY: ${{ env.OPENAI_API_KEY }}
+        GEMINI_API_KEY: ${{ env.GEMINI_API_KEY }}
+        OLLAMA_BASE_URL: ${{ env.OLLAMA_BASE_URL }}
+        LM_STUDIO_BASE_URL: ${{ env.LM_STUDIO_BASE_URL }}
+        GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
+      run: |
+        set -e  # Exit on any error
+
+        echo "🚀 Starting Continuous Review process..."
+        echo "============================================================"
+        echo "📋 VERIFICATION PROGRESS"
+        echo "============================================================"
+
+        # Validate required inputs
+        if [ ! -f "${{ inputs.project_file }}" ]; then
+          echo "❌ Project file not found: ${{ inputs.project_file }}"
+          exit 1
+        fi
+
+        # Check AI provider configuration
+        case "${{ inputs.ai_provider }}" in
+          "openai")
+            if [ -z "${OPENAI_API_KEY}" ]; then
+              echo "❌ OPENAI_API_KEY secret is required for OpenAI provider"
+              echo "Please add OPENAI_API_KEY to your repository secrets"
+              exit 1
+            fi
+            ;;
+          "gemini")
+            if [ -z "${GEMINI_API_KEY}" ]; then
+              echo "❌ GEMINI_API_KEY secret is required for Gemini provider"
+              echo "Please add GEMINI_API_KEY to your repository secrets"
+              exit 1
+            fi
+            ;;
+          "ollama")
+            echo "ℹ️  Using Ollama provider (no API key required)"
+            ;;
+          "lm_studio")
+            echo "ℹ️  Using LM Studio provider (no API key required)"
+            ;;
+          *)
+            echo "❌ Unsupported AI provider: ${{ inputs.ai_provider }}"
+            echo "Supported providers: openai, gemini, ollama, lm_studio"
+            exit 1
+            ;;
+        esac
+
+        # Run the verification
+        echo "🔧 Running verification process..."
+        if uv run python cr_runner.py; then
+          echo "✅ Verification completed successfully"
+        else
+          echo "❌ Verification failed"
+          exit 1
+        fi
+
+        # Set outputs
+        echo "results_path=${{ inputs.output_folder }}" >> $GITHUB_OUTPUT
+
+        # Count results (look recursively for reports in subdirectories)
+        if [ -d "${{ inputs.output_folder }}" ]; then
+          verification_count=$(find "${{ inputs.output_folder }}" -name "*_report.md" -type f | wc -l)
+          success_count=$(find "${{ inputs.output_folder }}" -name "*_report.md" -type f | wc -l)
+          echo "verification_count=$verification_count" >> $GITHUB_OUTPUT
+          echo "success_count=$success_count" >> $GITHUB_OUTPUT
+          echo "📊 Found $verification_count verification reports"
+          
+          # List the actual report files found
+          echo "Report files:"
+          find "${{ inputs.output_folder }}" -name "*_report.md" -type f | head -10
+        else
+          echo "verification_count=0" >> $GITHUB_OUTPUT
+          echo "success_count=0" >> $GITHUB_OUTPUT
+          echo "⚠️  No output folder found"
+        fi
+
+    - name: Upload results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: prd-verification-results-${{ github.run_number }}
+        path: ${{ inputs.output_folder }}/
+        retention-days: 30
+
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request' && steps.verification.outcome == 'success'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+
+          // Check if results directory exists
+          const resultsDir = '${{ inputs.output_folder }}';
+          if (!fs.existsSync(resultsDir)) {
+            console.log('No results directory found');
+            return;
+          }
+
+          // Find all report files
+          const reportFiles = [];
+          function findReports(dir) {
+            const files = fs.readdirSync(dir);
+            for (const file of files) {
+              const filePath = path.join(dir, file);
+              const stat = fs.statSync(filePath);
+              if (stat.isDirectory()) {
+                findReports(filePath);
+              } else if (file.endsWith('.md')) {
+                reportFiles.push(filePath);
+              }
+            }
+          }
+
+          findReports(resultsDir);
+
+          if (reportFiles.length === 0) {
+            console.log('No report files found');
+            return;
+          }
+
+          // Create comment
+          let comment = '## 🔍 PRD Code Verification Results\n\n';
+          comment += `Found ${reportFiles.length} verification report(s):\n\n`;
+
+          for (const reportFile of reportFiles) {
+            const relativePath = path.relative(resultsDir, reportFile);
+            const fileName = path.basename(reportFile);
+            comment += `- [${fileName}](${relativePath})\n`;
+          }
+
+          comment += '\n---\n*Generated by PRD Code Verifier*';
+
+          // Post comment
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });

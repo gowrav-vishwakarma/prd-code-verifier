@@ -1,0 +1,104 @@
+# Example workflows showing different publishing options for PRD Code Verifier
+
+# Option 1: Publish to Gist (Recommended - No infinite loops)
+name: PRD Verification - Gist Publishing
+on:
+  workflow_dispatch:
+    inputs:
+      ai_provider:
+        description: "AI Provider to use"
+        required: true
+        default: "gemini"
+        type: choice
+        options: [openai, gemini, ollama, lm_studio]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: PRD Code Verification
+        uses: gowrav-vishwakarma/prd-code-verifier@main
+        with:
+          project_file: "your-project.json"
+          ai_provider: ${{ github.event.inputs.ai_provider }}
+          publish_destination: "gist"  # This will create a Gist instead of committing to repo
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+# Option 2: Publish to External Repository
+name: PRD Verification - External Repository
+on:
+  workflow_dispatch:
+    inputs:
+      publish_repo:
+        description: "Repository to publish to (owner/repo)"
+        required: true
+        default: "your-org/verification-reports"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: PRD Code Verification
+        uses: gowrav-vishwakarma/prd-code-verifier@main
+        with:
+          project_file: "your-project.json"
+          publish_destination: "repository"
+          publish_repo: ${{ github.event.inputs.publish_repo }}
+          publish_branch: "main"
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+# Option 3: Artifacts Only (No publishing)
+name: PRD Verification - Artifacts Only
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: PRD Code Verification
+        uses: gowrav-vishwakarma/prd-code-verifier@main
+        with:
+          project_file: "your-project.json"
+          publish_destination: "artifacts_only"  # Only upload artifacts, no publishing
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+# Option 4: Same Repository (with infinite loop prevention)
+name: PRD Verification - Same Repository
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    # Prevent self-triggering when reports are published
+    if: github.event.head_commit.author.name != 'github-actions[bot]' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: PRD Code Verification
+        uses: gowrav-vishwakarma/prd-code-verifier@main
+        with:
+          project_file: "your-project.json"
+          publish_destination: "repository"  # Publish to same repo
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

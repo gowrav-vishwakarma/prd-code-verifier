@@ -1,0 +1,97 @@
+{
+  "project_name": "Example Project Verification",
+  "output_folder": "./reports",
+  "documentation_root_path": "",
+  "frontend_project_path": "",
+  "backend_project_path": "",
+  "global_system_prompt": "You are an expert software engineer tasked with verifying code implementations against documentation. Analyze the provided code and documentation to identify:\n\n1. **Compliance**: Does the code follow the documented requirements?\n2. **Gaps**: What functionality is documented but not implemented?\n3. **Discrepancies**: What is implemented differently than documented?\n4. **Quality**: Are there any code quality issues?\n5. **Recommendations**: What improvements should be made?\n\nProvide a detailed analysis with specific examples and actionable recommendations.",
+  "global_instructions": "Please provide a comprehensive analysis of the code against the documentation. Include:\n\n- **Executive Summary**: High-level overview of compliance status\n- **Detailed Analysis**: Section-by-section breakdown\n- **Issues Found**: List of specific problems with code references\n- **Recommendations**: Actionable steps to improve compliance\n- **Code Quality**: Assessment of code structure and best practices\n- **Next Steps**: Priority order for addressing issues\n\nFormat your response in clear markdown with proper headings and code blocks where appropriate.",
+  "verification_sections": [
+    {
+      "name": "API Endpoints Verification",
+      "documentation_files": [
+        "docs/api-specification.md",
+        "docs/endpoints.md"
+      ],
+      "frontend_code_files": [
+        "src/api/client.js",
+        "src/services/apiService.js"
+      ],
+      "backend_code_files": [
+        "api/routes/users.js",
+        "api/routes/products.js",
+        "api/controllers/userController.js"
+      ],
+      "system_prompt_mode": "use_global",
+      "instructions_mode": "use_global",
+      "verification_system_prompt": null,
+      "verification_instructions": null
+    },
+    {
+      "name": "Database Schema Verification",
+      "documentation_files": [
+        "docs/database-schema.md",
+        "docs/data-models.md"
+      ],
+      "frontend_code_files": [],
+      "backend_code_files": [
+        "models/User.js",
+        "models/Product.js",
+        "migrations/001_create_users.js",
+        "migrations/002_create_products.js"
+      ],
+      "system_prompt_mode": "use_global",
+      "instructions_mode": "use_global",
+      "verification_system_prompt": null,
+      "verification_instructions": null
+    },
+    {
+      "name": "Authentication Flow Verification",
+      "documentation_files": [
+        "docs/authentication.md",
+        "docs/security-requirements.md"
+      ],
+      "frontend_code_files": [
+        "src/components/LoginForm.jsx",
+        "src/hooks/useAuth.js",
+        "src/utils/auth.js"
+      ],
+      "backend_code_files": [
+        "middleware/auth.js",
+        "routes/auth.js",
+        "controllers/authController.js"
+      ],
+      "system_prompt_mode": "use_global",
+      "instructions_mode": "use_global",
+      "verification_system_prompt": null,
+      "verification_instructions": null
+    },
+    {
+      "name": "UI Component Verification",
+      "documentation_files": [
+        "docs/component-library.md",
+        "docs/design-system.md"
+      ],
+      "frontend_code_files": [
+        "src/components/Button.jsx",
+        "src/components/Modal.jsx",
+        "src/components/Form.jsx",
+        "src/styles/components.css"
+      ],
+      "backend_code_files": [],
+      "system_prompt_mode": "use_global",
+      "instructions_mode": "use_global",
+      "verification_system_prompt": null,
+      "verification_instructions": null
+    }
+  ],
+  "ai_config": {
+    "provider": "openai",
+    "api_key": null,
+    "base_url": "https://api.openai.com/v1",
+    "model": "gpt-3.5-turbo",
+    "tag": null,
+    "temperature": 0.7,
+    "max_tokens": null
+  }
+}

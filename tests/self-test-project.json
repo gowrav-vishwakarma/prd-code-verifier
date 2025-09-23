@@ -1,0 +1,90 @@
+{
+  "project_name": "PRD Code Verifier Self-Test",
+  "output_folder": "./reports",
+  "global_system_prompt": "You are an expert software engineer and technical reviewer specializing in PRD (Product Requirements Document) verification systems. Your task is to analyze the PRD Code Verifier project implementation against its own documentation to ensure the code matches the requirements and specifications described in the README and other documentation files.\n\nYou should verify:\n1. The web application functionality matches the documentation\n2. The GitHub Action implementation follows the documented specifications\n3. The verification engine works as described\n4. The AI provider integrations are correctly implemented\n5. The project structure and file organization matches the documented architecture\n6. All features mentioned in the README are properly implemented\n\nFocus on identifying gaps between what's documented and what's actually implemented, ensuring the system works as advertised for users.",
+  "global_instructions": "Please provide a comprehensive analysis of the PRD Code Verifier project by comparing the implementation against its documentation. Create a detailed report in markdown table format with the following columns:\n\n1. **File/Component** - The specific file or component being analyzed\n2. **Documentation Reference** - What the documentation says about this component\n3. **Implementation Status** - Whether it's implemented correctly, partially, or missing\n4. **Gaps/Issues** - Specific gaps or issues found\n5. **Recommendations** - How to fix or improve the implementation\n6. **Priority** - High/Medium/Low priority for fixes\n\nInclude analysis of:\n- Web application functionality (templates, static files, routes)\n- GitHub Action configuration and implementation\n- AI provider integrations and configurations\n- Verification engine logic and workflow\n- Project structure and file organization\n- Environment configuration and setup\n- Error handling and user experience\n- Documentation completeness and accuracy\n\nProvide specific code examples where relevant and suggest concrete improvements.",
+  "verification_sections": [
+    {
+      "name": "Web Application Verification",
+      "documentation_files": [
+        "README.md",
+        "project.md"
+      ],
+      "frontend_code_files": [
+        "templates/index.html",
+        "web_app.py",
+        "main.py"
+      ],
+      "backend_code_files": [
+        "verification_engine.py",
+        "models.py",
+        "config.py"
+      ],
+      "system_prompt_mode": "use_global",
+      "instructions_mode": "use_global",
+      "verification_system_prompt": "",
+      "verification_instructions": "",
+      "override_global_system_prompt": false,
+      "override_global_instructions": false
+    },
+    {
+      "name": "GitHub Action Verification",
+      "documentation_files": [
+        "README.md",
+        "action.yml"
+      ],
+      "frontend_code_files": [],
+      "backend_code_files": [
+        "action.yml",
+        "cr_runner.py",
+        "cr_config.py"
+      ],
+      "system_prompt_mode": "use_global",
+      "instructions_mode": "use_global",
+      "verification_system_prompt": "",
+      "verification_instructions": "",
+      "override_global_system_prompt": false,
+      "override_global_instructions": false
+    },
+    {
+      "name": "AI Provider Integration Verification",
+      "documentation_files": [
+        "README.md",
+        "env.example"
+      ],
+      "frontend_code_files": [],
+      "backend_code_files": [
+        "ai_providers.py",
+        "config.py",
+        "env.example"
+      ],
+      "system_prompt_mode": "use_global",
+      "instructions_mode": "use_global",
+      "verification_system_prompt": "",
+      "verification_instructions": "",
+      "override_global_system_prompt": false,
+      "override_global_instructions": false
+    },
+    {
+      "name": "Project Structure Verification",
+      "documentation_files": [
+        "README.md"
+      ],
+      "frontend_code_files": [
+        "templates/",
+        "static/"
+      ],
+      "backend_code_files": [
+        "utils/",
+        "examples/",
+        "projects/"
+      ],
+      "system_prompt_mode": "use_global",
+      "instructions_mode": "use_global",
+      "verification_system_prompt": "",
+      "verification_instructions": "",
+      "override_global_system_prompt": false,
+      "override_global_instructions": false
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+.env
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+*.log
+
+# VSCode
+.vscode/
+
+# macOS
+.DS_Store
+
+# UV
+.uv/
+
+# Environment
+.env.*
+!.env.example
+.secrets
+
+# OS
+Thumbs.db
+
+# Test/coverage
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
+.cache/
+
+# Output/Reports
+output/
+reports/
+*.md_report
+
+# Node (if frontend assets are used)
+node_modules/
+
+# Misc
+*.bak
+*.swp
+*.tmp
+*.orig
+# Project files
+*.project.json
+
+projects/

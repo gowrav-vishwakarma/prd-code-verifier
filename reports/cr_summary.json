@@ -1,0 +1,66 @@
+{
+  "timestamp": "2025-09-22T11:58:24.387796",
+  "total_verifications": 4,
+  "successful_verifications": 4,
+  "failed_verifications": 0,
+  "results": [
+    {
+      "verification_name": "Web Application Verification",
+      "success": true,
+      "error_message": null,
+      "report_file_path": "./reports/PRD Code Verifier Self-Test/Web Application Verification/gemini_gemini-2.5-flash_report.md",
+      "ai_provider": "gemini",
+      "ai_model": "gemini-2.5-flash",
+      "ai_tag": null
+    },
+    {
+      "verification_name": "GitHub Action Verification",
+      "success": true,
+      "error_message": null,
+      "report_file_path": "./reports/PRD Code Verifier Self-Test/GitHub Action Verification/gemini_gemini-2.5-flash_report.md",
+      "ai_provider": "gemini",
+      "ai_model": "gemini-2.5-flash",
+      "ai_tag": null
+    },
+    {
+      "verification_name": "AI Provider Integration Verification",
+      "success": true,
+      "error_message": null,
+      "report_file_path": "./reports/PRD Code Verifier Self-Test/AI Provider Integration Verification/gemini_gemini-2.5-flash_report.md",
+      "ai_provider": "gemini",
+      "ai_model": "gemini-2.5-flash",
+      "ai_tag": null
+    },
+    {
+      "verification_name": "Project Structure Verification",
+      "success": true,
+      "error_message": null,
+      "report_file_path": "./reports/PRD Code Verifier Self-Test/Project Structure Verification/gemini_gemini-2.5-flash_report.md",
+      "ai_provider": "gemini",
+      "ai_model": "gemini-2.5-flash",
+      "ai_tag": null
+    }
+  ],
+  "reports": [
+    {
+      "file": "PRD Code Verifier Self-Test/AI Provider Integration Verification/gemini_gemini-2.5-flash_report.md",
+      "size": 14868,
+      "modified": 1758541953.8184888
+    },
+    {
+      "file": "PRD Code Verifier Self-Test/Web Application Verification/gemini_gemini-2.5-flash_report.md",
+      "size": 1030167,
+      "modified": 1758541814.5794656
+    },
+    {
+      "file": "PRD Code Verifier Self-Test/Project Structure Verification/gemini_gemini-2.5-flash_report.md",
+      "size": 14068,
+      "modified": 1758542304.38456
+    },
+    {
+      "file": "PRD Code Verifier Self-Test/GitHub Action Verification/gemini_gemini-2.5-flash_report.md",
+      "size": 227597,
+      "modified": 1758541866.8754635
+    }
+  ]
+}
