@@ -158,64 +158,11 @@ This tool can be used for **any AI-powered code analysis** where you need to com
 }
 ```
 
-### Key Advantages
-
-- **🔄 Change-Based Analysis**: Only processes modified files (via verification sections) - perfect for CI/CD pipelines
-- **🎯 Targeted Analysis**: Focus on specific areas or concerns without analyzing entire codebase
-- **🔧 Customizable**: Adapt prompts for any analysis type (security, quality, architecture, etc.)
-- **📁 Multi-Repository**: Analyze across different codebases (docs, frontend, backend) in one analysis
-- **🤖 AI-Powered**: Leverage any AI model for analysis (OpenAI, Gemini, local LLMs)
-- **⚡ Automated**: Integrate into CI/CD pipelines for continuous analysis
-- **📊 Structured Output**: Generate detailed reports with actionable insights
-- **🚀 Efficient**: Process only what changed, not entire codebase every time
-
 > **💡 Getting Started Tip**: The best way to master this tool is to **clone and use it locally first**. Start with the web application to understand how it works, then move to GitHub Actions for automation.
 
 > **⚠️ Important Disclaimer**: This tool can consume significant AI tokens, especially with large codebases. We strongly recommend using **local LLMs** (Ollama, LM Studio) or your own servers to avoid unexpected costs. Always test with small projects first!
 
-### Key Capabilities
-
-- **Multi-AI Provider Support**: OpenAI, Google Gemini, Ollama, LM Studio
-- **Flexible Verification**: Multiple verification sections per project
-- **Smart File Detection**: Automatic detection of changed files in CR mode
-- **Real-time Streaming**: Live progress updates during verification
-- **Web Interface**: User-friendly web application for project management
-- **GitHub Actions Integration**: Seamless CI/CD pipeline integration
-
-## Features
-
-### Core Features
-
-- ✅ **Project Management**: Create, save, and load verification projects
-- ✅ **Multi-Provider AI Support**: OpenAI, Gemini, Ollama, LM Studio
-- ✅ **Flexible Verification Sections**: Multiple verification types per project
-- ✅ **Smart Prompt Building**: Combines system prompts, documentation, and code
-- ✅ **Real-time Progress**: Streaming updates during verification
-- ✅ **Report Generation**: Detailed markdown reports with metadata
-- ✅ **Environment Variable Substitution**: Dynamic configuration support
-
-### Web Application Features
-
-- ✅ **Intuitive UI**: Bootstrap-based responsive interface with modern design
-- ✅ **Project CRUD**: Create, save, load, and manage projects with JSON persistence
-- ✅ **AI Configuration**: Test connections and configure multiple AI providers
-- ✅ **File Path Management**: Easy file selection and path management with help system
-- ✅ **Real-time Streaming**: Live AI response streaming with progress indicators
-- ✅ **Markdown Preview**: Raw and preview modes for reports with syntax highlighting
-- ✅ **Verification Sections**: Dynamic verification configuration with multiple modes
-- ✅ **Progress Tracking**: Real-time progress updates with detailed status indicators
-- ✅ **Report Management**: Download and view verification reports
-- ✅ **Environment Variables**: Support for `$VARIABLE` substitution in configurations
-
 > **📸 UI Screenshots**: See the [Web Application Interface Overview](#web-application-interface-overview) section below for detailed screenshots of the interface.
-
-### CR Mode Features
-
-- ✅ **Repository Cloning**: Automatic cloning of multiple repositories
-- ✅ **Change Detection**: Smart detection of affected verification sections
-- ✅ **GitHub Actions**: Ready-to-use GitHub Action
-- ✅ **Publishing**: Automatic report publishing to GitHub
-- ✅ **Environment Substitution**: Dynamic configuration with `$VARIABLE` patterns
 
 ## Installation
 
@@ -452,34 +399,6 @@ _Figure 2: AI Configuration and Verification Sections - AI provider setup and ve
 - Organized file structure: `output/project_name/verification_name/`
 - Download links and inline viewing
 - Raw and preview modes for report content
-
-#### Web Application API Endpoints
-
-The web application provides a comprehensive REST API for all operations:
-
-##### **Project Management**
-
-- `GET /` - Main application interface
-- `POST /api/projects/save` - Save project configuration as JSON
-- `GET /api/projects` - List all saved projects
-- `POST /api/projects/load` - Load project configuration from file
-
-##### **AI Configuration**
-
-- `GET /api/providers` - Get available AI providers
-- `GET /api/config/default-ai` - Get default AI configuration
-- `GET /api/config/streaming` - Get streaming configuration
-- `POST /api/ai/test-connection` - Test AI provider connection
-
-##### **Verification Execution**
-
-- `POST /api/verification/run` - Run verification (non-streaming)
-- `POST /api/verification/run-stream` - Run verification with real-time streaming
-
-##### **Report Access**
-
-- `GET /api/reports/{project_name}/{verification_name}/{filename}` - Download specific report
-- `GET /api/reports/{project_name}/{filename}` - Legacy report download endpoint
 
 ##### **Streaming Features**
 
